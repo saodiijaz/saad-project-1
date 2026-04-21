@@ -341,6 +341,26 @@ export async function uploadAvatar(uri: string): Promise<string> {
   return publicUrl
 }
 
+// ---------- Cities ----------
+
+export type City = {
+  id: string
+  name: string
+  region: string | null
+  latitude: number
+  longitude: number
+}
+
+export async function getCities(): Promise<City[]> {
+  if (!supabase) return [
+    { id: 'ljk', name: 'Linköping', region: 'Östergötland', latitude: 58.4108, longitude: 15.6214 }
+  ]
+  const { data, error } = await supabase
+    .from('cities').select('*').order('name')
+  if (error) throw error
+  return (data ?? []) as City[]
+}
+
 // ---------- Friends ----------
 
 export type FriendUser = {
