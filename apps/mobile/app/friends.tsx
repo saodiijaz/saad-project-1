@@ -6,6 +6,7 @@ import {
   respondToFriendRequest, removeFriend, FriendUser, FriendRequest,
 } from '../lib/data'
 import { EmptyState } from '../components/EmptyState'
+import { hapticLight, hapticError } from '../lib/haptics'
 
 type Tab = 'friends' | 'requests' | 'search'
 
@@ -34,15 +35,22 @@ export default function FriendsScreen() {
   async function handleSendRequest(userId: string) {
     try {
       await sendFriendRequest(userId)
+      hapticLight()
       Alert.alert('Skickat', 'Vänförfrågan skickad')
-    } catch (e: any) { Alert.alert('Fel', e?.message ?? 'Kunde inte skicka') }
+    } catch (e: any) {
+      hapticError()
+      Alert.alert('Fel', e?.message ?? 'Kunde inte skicka')
+    }
   }
 
   async function handleRespond(id: string, accept: boolean) {
     try {
       await respondToFriendRequest(id, accept)
       loadAll()
-    } catch (e: any) { Alert.alert('Fel', e?.message ?? 'Kunde inte svara') }
+    } catch (e: any) {
+      hapticError()
+      Alert.alert('Fel', e?.message ?? 'Kunde inte svara')
+    }
   }
 
   async function handleRemove(userId: string) {

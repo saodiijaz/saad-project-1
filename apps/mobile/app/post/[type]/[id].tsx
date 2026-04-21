@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { View, Text, TextInput, Pressable, StyleSheet, FlatList, Alert, Image } from 'react-native'
 import { useLocalSearchParams, Stack } from 'expo-router'
 import { getComments, addComment, Comment, PostType } from '../../../lib/data'
+import { hapticMedium, hapticError } from '../../../lib/haptics'
 
 export default function PostDetail() {
   const { type, id } = useLocalSearchParams<{ type: string; id: string }>()
@@ -23,9 +24,11 @@ export default function PostDetail() {
     setBusy(true)
     try {
       await addComment(postType, id, body)
+      hapticMedium()
       setBody('')
       await load()
     } catch (e: any) {
+      hapticError()
       Alert.alert('Fel', e?.message ?? 'Kunde inte kommentera')
     } finally { setBusy(false) }
   }

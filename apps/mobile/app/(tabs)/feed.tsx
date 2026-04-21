@@ -5,6 +5,7 @@ import { getMixedFeed, FeedItem, getLikeState, toggleLike, getCommentCount, Post
 import { EmptyState } from '../../components/EmptyState'
 import { SkeletonList } from '../../components/SkeletonCard'
 import { PressableScale } from '../../components/PressableScale'
+import { hapticLight } from '../../lib/haptics'
 
 export default function Feed() {
   const router = useRouter()
@@ -83,6 +84,7 @@ export function PostActions({ type, id }: { type: PostType; id: string }) {
     const was = liked
     setLiked(!was)
     setLikeCount(c => c + (was ? -1 : 1))
+    if (!was) hapticLight()
     try {
       const now = await toggleLike(type, id)
       setLiked(now) // sync

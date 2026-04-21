@@ -6,6 +6,7 @@ import {
   getClubPosts, isClubAdmin, getClubFollowerCount,
 } from '../../lib/data'
 import { Club, ClubPost } from '../../lib/types'
+import { hapticLight, hapticError } from '../../lib/haptics'
 
 export default function ClubProfile() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -47,7 +48,9 @@ export default function ClubProfile() {
     try {
       if (following) { await unfollowClub(id); setFollowing(false) }
       else { await followClub(id); setFollowing(true) }
+      hapticLight()
     } catch (e: any) {
+      hapticError()
       Alert.alert('Fel', e?.message ?? 'Kunde inte uppdatera följ-status')
     } finally {
       setFollowBusy(false)

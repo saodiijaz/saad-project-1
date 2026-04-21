@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { View, Text, TextInput, Pressable, StyleSheet, Alert, ScrollView } from 'react-native'
 import { useRouter, Stack } from 'expo-router'
 import { createEvent, getMyAdminClubs } from '../../lib/data'
+import { hapticSuccess, hapticError } from '../../lib/haptics'
 
 export default function NewEvent() {
   const router = useRouter()
@@ -27,8 +28,10 @@ export default function NewEvent() {
         startsAt: new Date(startsAt).toISOString(),
         clubId,
       })
+      hapticSuccess()
       router.replace(`/event/${newId}`)
     } catch (e: any) {
+      hapticError()
       Alert.alert('Fel', e?.message ?? 'Kunde inte skapa event')
     } finally { setBusy(false) }
   }
