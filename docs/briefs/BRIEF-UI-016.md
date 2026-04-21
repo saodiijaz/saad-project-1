@@ -1,60 +1,70 @@
-# BRIEF-UI-016: Karta över föreningar
+# BRIEF-UI-016: Karta över föreningar (MapLibre)
 
 ## Status
-🟡 **NEEDS-INPUT** — Körs INTE av Cowork förrän Zivar väljer kart-bibliotek.
+✅ READY — använder MapLibre (gratis, OpenStreetMap).
 
-## Beslut som behövs
-Välj ett av följande, sen kompletterar FORGE denna brief med exakt kod:
+## Mål
+Ny skärm `/map` som visar alla föreningar som markers på en karta. Klick på marker → popup → knapp till klubbsidan.
 
-| Alternativ | Fördelar | Nackdelar |
-|---|---|---|
-| **Google Maps** (react-native-maps) | Bäst UX, välkänd UI | Kräver Google Cloud API-nyckel, kostnad över kvot |
-| **MapLibre** (@maplibre/maplibre-react-native) | Open source, gratis, OpenStreetMap | Mer setup, något tyngre |
-| **Mapbox** (rnmapbox/maps) | Snygg, snabb | Kräver Mapbox-konto, kostnad över kvot |
+## Kontext
+- MapLibre är open source, ingen API-nyckel krävs
+- `cities`-tabellen har lat/lng — varje klubb använder sin stads koordinater (MVP — senare kan klubbar ha egna koordinater)
+- Demo-tiles från MapTiler (gratis kvot 100k/mån) eller OpenStreetMap direkt
 
-Rekommendation för MVP: **react-native-maps + Google Maps** (enklast att komma igång, gratis kvot räcker tills appen har tusentals användare).
-
-## Mål (oavsett val)
-Ny flik eller knapp som visar en karta med markers för varje förening. Klick på marker → mini-popup → kan navigera till club-profil.
+## Blockerad av
+BRIEF-DB-007 (cities-tabell + clubs.city_id). Om den inte körd → markera BLOCKED.
 
 ## Förutsättningar
-- BRIEF-DB-007 körd (cities med lat/lng)
-- Långsiktigt: varje klubb bör ha egen latitude/longitude, inte bara city
-- MVP: använd city.latitude/longitude för alla klubbar i samma stad (de hamnar på varandra men är acceptabelt)
-
-## Skisserad setup (Google Maps, kompletteras efter val)
-
 ```bash
 cd apps/mobile
-npx expo install react-native-maps
+npx expo install @maplibre/maplibre-react-native
 ```
 
-`app.json` → Android:
-```json
-"android": {
-  "config": {
-    "googleMaps": { "apiKey": "ZIVAR_FYLLER_IN" }
-  }
+**För Android** — lägg till i `android/build.gradle` (root):
+```gradle
+allprojects {
+    repositories {
+        maven { url "https://api.mapbox.com/downloads/v2/releases/maven" }
+    }
 }
 ```
 
-iOS-nyckel sätts via AppDelegate eller config-plugin.
+Kommentar: Eftersom projektet använder Expo managed workflow kan config-plugin krävas. Prova först utan, och om build failar lägg till i `app.json`:
+```json
+"plugins": [
+  ["@maplibre/maplibre-react-native"]
+]
+```
 
-## Steg — placeholder
-Fylls i när val är gjort. Kommer innehålla:
-- `apps/mobile/app/map.tsx` (eller som tab)
-- `apps/mobile/lib/data.ts` — `getClubsWithCoords()`
-- Markers + popup med klubbnamn
-- Click → navigate till `/club/[id]`
+## Berörda filer
+- `apps/mobile/lib/data.ts` — getClubsForMap helper
+- `apps/mobile/app/map.tsx` — ny skärm
+- `apps/mobile/app/(tabs)/_layout.tsx` — lägg till Map-tab ELLER en knapp på Upptäck
+- `apps/mobile/package.json` — ny dep
 
-## Verifiering
-- [ ] Karta renderas
-- [ ] Markers visas på rätt stad
-- [ ] Klick navigerar till club-profil
+## Steg
 
-## Rollback
-Ta bort app/map.tsx, ta bort dep, clean build.
+### 1. Lägg till i `apps/mobile/lib/data.ts`:
+```typescript
+export type MapClub = {
+  id: string
+  name: string
+  city: string
+  latitude: number
+  longitude: number
+  sports: string[]
+}
 
----
-
-**Cowork:** Hoppa denna brief tills Zivar svarat via ny brief-revision från FORGE.
+export async function getClubsForMap(): Promise<MapClub[]> {
+  if (!hasSupabaseConfig || !supabase) return []
+  const { data, error } = await supabase
+    .from('clubs')
+    .select(`
+      id, name, city,
+      cities ( latitude, longitude ),
+      club_sports ( sports ( slug ) )
+    `)
+  if (error) throw error
+  return (data ?? [])
+    .filter((c: any) => c.cities)
+    .map((c: any) => (
