@@ -708,6 +708,27 @@ export async function addComment(postType: PostType, postId: string, body: strin
   if (error) throw error
 }
 
+// ---------- Moderation ----------
+
+export type ReportReason = 'spam' | 'harassment' | 'nudity' | 'violence' | 'other'
+
+export async function reportPost(
+  type: PostType, postId: string, reason: ReportReason, note?: string,
+): Promise<void> {
+  if (!supabase) throw new Error('Not connected')
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) throw new Error('Not logged in')
+  const { error } = await supabase.from('post_reports').insert({
+    reporter_id: session.user.id,
+    post_type: type,
+    post_id: postId,
+    reason,
+    note: note ?? null,
+  })
+  // Tillåt re-rapport som "redan finns" — slussa det inte uppåt
+  if (error && error.code !== '23505') throw error
+}
+
 export async function deleteComment(commentId: string): Promise<void> {
   if (!supabase) return
   await supabase.from('post_comments').delete().eq('id', commentId)

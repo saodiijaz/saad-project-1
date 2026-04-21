@@ -3,6 +3,7 @@ import { View, Text, TextInput, Pressable, StyleSheet, FlatList, Alert, Image } 
 import { useLocalSearchParams, Stack } from 'expo-router'
 import { getComments, addComment, Comment, PostType } from '../../../lib/data'
 import { hapticMedium, hapticError } from '../../../lib/haptics'
+import { ReportPostButton } from '../../../components/ReportPostButton'
 
 export default function PostDetail() {
   const { type, id } = useLocalSearchParams<{ type: string; id: string }>()
@@ -36,6 +37,11 @@ export default function PostDetail() {
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ title: 'Kommentarer' }} />
+      {id ? (
+        <View style={styles.reportRow}>
+          <ReportPostButton postType={postType} postId={id} />
+        </View>
+      ) : null}
       <FlatList
         data={comments}
         keyExtractor={c => c.id}
@@ -86,4 +92,5 @@ const styles = StyleSheet.create({
   input: { flex: 1, borderWidth: 1, borderColor: '#ddd', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 10, fontSize: 15, maxHeight: 100 },
   send: { marginLeft: 8, paddingHorizontal: 14, paddingVertical: 10 },
   sendText: { color: '#0F6E56', fontWeight: '600' },
+  reportRow: { padding: 10, alignItems: 'flex-end' },
 })
