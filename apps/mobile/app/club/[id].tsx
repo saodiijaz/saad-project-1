@@ -1,33 +1,36 @@
 import { useEffect, useState } from 'react'
 import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, Alert } from 'react-native'
-import { useLocalSearchParams, Stack } from 'expo-router'
-import { getClubById, isFollowing, followClub, unfollowClub } from '../../lib/data'
-import { Club } from '../../lib/types'
+import { useLocalSearchParams, Stack, useRouter } from 'expo-router'
+import {
+  getClubById, isFollowing, followClub, unfollowClub,
+  getClubPosts, isClubAdmin,
+} from '../../lib/data'
+import { Club, ClubPost } from '../../lib/types'
 
 export default function ClubProfile() {
   const { id } = useLocalSearchParams<{ id: string }>()
+  const router = useRouter()
   const [club, setClub] = useState<Club | null>(null)
   const [loading, setLoading] = useState(true)
   const [following, setFollowing] = useState(false)
   const [followBusy, setFollowBusy] = useState(false)
+  const [posts, setPosts] = useState<ClubPost[]>([])
+  const [admin, setAdmin] = useState(false)
 
   useEffect(() => {
     if (!id) return
     getClubById(id).then(setClub).finally(() => setLoading(false))
     isFollowing(id).then(setFollowing)
+    getClubPosts(id).then(setPosts)
+    isClubAdmin(id).then(setAdmin)
   }, [id])
 
   async function toggleFollow() {
     if (!id || followBusy) return
     setFollowBusy(true)
     try {
-      if (following) {
-        await unfollowClub(id)
-        setFollowing(false)
-      } else {
-        await followClub(id)
-        setFollowing(true)
-      }
+      if (following) { await unfollowClub(id); setFollowing(false) }
+      else { await followClub(id); setFollowing(true) }
     } catch (e: any) {
       Alert.alert('Fel', e?.message ?? 'Kunde inte uppdatera följ-status')
     } finally {
@@ -56,8 +59,33 @@ export default function ClubProfile() {
             {followBusy ? '…' : following ? 'Följer ✓' : 'Följ förening'}
           </Text>
         </Pressable>
+
+        {admin && (
+          <Pressable style={styles.adminBtn} onPress={() => router.push(`/club/${id}/new-post`)}>
+            <Text style={styles.adminBtnText}>+ Skapa post</Text>
+          </Pressable>
+        )}
+
         {club.website && <Text style={styles.link}>🌐 {club.website}</Text>}
         {club.contact_email && <Text style={styles.link}>✉️ {club.contact_email}</Text>}
+
+        {posts.length > 0 && (
+          <View style={{ marginTop: 24 }}>
+            <Text style={styles.sectionTitle}>Händelser</Text>
+            {posts.map(p => (
+              <View key={p.id} style={styles.postCard}>
+                <Text style={styles.postTitle}>{p.title}</Text>
+                {p.event_at && (
+                  <Text style={styles.postDate}>
+                    {new Date(p.event_at).toLocaleDateString('sv-SE', { weekday: 'short', day: 'numeric', month: 'short' })}
+                    {p.location && ` · ${p.location}`}
+                  </Text>
+                )}
+                <Text style={styles.postBody}>{p.body}</Text>
+              </View>
+            ))}
+          </View>
+        )}
       </View>
     </ScrollView>
   )
@@ -75,4 +103,11 @@ const styles = StyleSheet.create({
   followText: { color: '#fff', fontSize: 16, fontWeight: '500' },
   followingText: { color: '#0F6E56' },
   link: { fontSize: 14, color: '#555', marginBottom: 6 },
+  adminBtn: { backgroundColor: '#F1EFE8', padding: 12, borderRadius: 8, alignItems: 'center', marginBottom: 16, borderWidth: 1, borderColor: '#0F6E56' },
+  adminBtnText: { color: '#0F6E56', fontSize: 15, fontWeight: '500' },
+  sectionTitle: { fontSize: 18, fontWeight: '600', marginBottom: 12, color: '#222' },
+  postCard: { padding: 14, backgroundColor: '#fafafa', borderRadius: 10, marginBottom: 10, borderWidth: 1, borderColor: '#eee' },
+  postTitle: { fontSize: 16, fontWeight: '600', marginBottom: 4 },
+  postDate: { fontSize: 13, color: '#0F6E56', marginBottom: 6 },
+  postBody: { fontSize: 14, color: '#333', lineHeight: 20 },
 })

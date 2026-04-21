@@ -1,6 +1,6 @@
 import { supabase, hasSupabaseConfig } from './supabase'
 import { mockClubs } from './mock-data'
-import { Club } from './types'
+import { Club, ClubPost } from './types'
 
 export async function getClubs(): Promise<Club[]> {
   if (!hasSupabaseConfig || !supabase) return mockClubs
@@ -126,4 +126,37 @@ export async function getFollowedClubs(): Promise<Club[]> {
     ...row.clubs,
     sports: (row.clubs.club_sports ?? []).map((cs: any) => cs.sports?.slug).filter(Boolean),
   }))
+}
+
+// ---------- Club posts ----------
+
+export async function getClubPosts(clubId: string): Promise<ClubPost[]> {
+  if (!hasSupabaseConfig || !supabase) return []
+  const { data, error } = await supabase
+    .from('club_posts').select('*').eq('club_id', clubId)
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return (data ?? []) as ClubPost[]
+}
+
+export async function isClubAdmin(clubId: string): Promise<boolean> {
+  if (!supabase) return false
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) return false
+  const { data } = await supabase
+    .from('club_members').select('role')
+    .eq('user_id', session.user.id).eq('club_id', clubId).maybeSingle()
+  return !!data
+}
+
+export async function createClubPost(p: {
+  clubId: string; title: string; body: string;
+  eventAt?: string; location?: string
+}): Promise<void> {
+  if (!supabase) throw new Error('Not connected')
+  const { error } = await supabase.from('club_posts').insert({
+    club_id: p.clubId, title: p.title, body: p.body,
+    event_at: p.eventAt ?? null, location: p.location ?? null,
+  })
+  if (error) throw error
 }
