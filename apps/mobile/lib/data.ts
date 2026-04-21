@@ -483,6 +483,87 @@ export async function getUserPosts(limit = 50): Promise<UserPost[]> {
   return (data ?? []) as UserPost[]
 }
 
+// ---------- Comments and likes ----------
+
+export type PostType = 'club' | 'user'
+
+export type Comment = {
+  id: string
+  post_type: PostType
+  post_id: string
+  author_id: string
+  body: string
+  created_at: string
+  author?: { id: string; display_name: string | null; avatar_url: string | null; email: string }
+}
+
+export async function getComments(postType: PostType, postId: string): Promise<Comment[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase
+    .from('post_comments')
+    .select('*, author:author_id(id, display_name, avatar_url, email)')
+    .eq('post_type', postType).eq('post_id', postId)
+    .order('created_at', { ascending: true })
+  if (error) throw error
+  return (data ?? []) as Comment[]
+}
+
+export async function addComment(postType: PostType, postId: string, body: string): Promise<void> {
+  if (!supabase) throw new Error('Not connected')
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) throw new Error('Not logged in')
+  const { error } = await supabase.from('post_comments').insert({
+    post_type: postType, post_id: postId, author_id: session.user.id, body: body.trim(),
+  })
+  if (error) throw error
+}
+
+export async function deleteComment(commentId: string): Promise<void> {
+  if (!supabase) return
+  await supabase.from('post_comments').delete().eq('id', commentId)
+}
+
+export async function getLikeState(postType: PostType, postId: string): Promise<{ liked: boolean; count: number }> {
+  if (!supabase) return { liked: false, count: 0 }
+  const { data: { session } } = await supabase.auth.getSession()
+  const [likedRes, countRes] = await Promise.all([
+    session
+      ? supabase.from('post_likes').select('user_id').eq('post_type', postType).eq('post_id', postId).eq('user_id', session.user.id).maybeSingle()
+      : Promise.resolve({ data: null } as { data: null }),
+    supabase.from('post_likes').select('*', { count: 'exact', head: true }).eq('post_type', postType).eq('post_id', postId),
+  ])
+  return { liked: !!likedRes.data, count: countRes.count ?? 0 }
+}
+
+export async function toggleLike(postType: PostType, postId: string): Promise<boolean> {
+  if (!supabase) throw new Error('Not connected')
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) throw new Error('Not logged in')
+
+  const { data: existing } = await supabase
+    .from('post_likes').select('user_id')
+    .eq('post_type', postType).eq('post_id', postId).eq('user_id', session.user.id).maybeSingle()
+
+  if (existing) {
+    await supabase.from('post_likes').delete()
+      .eq('post_type', postType).eq('post_id', postId).eq('user_id', session.user.id)
+    return false
+  } else {
+    await supabase.from('post_likes').insert({
+      post_type: postType, post_id: postId, user_id: session.user.id,
+    })
+    return true
+  }
+}
+
+export async function getCommentCount(postType: PostType, postId: string): Promise<number> {
+  if (!supabase) return 0
+  const { count } = await supabase.from('post_comments')
+    .select('*', { count: 'exact', head: true })
+    .eq('post_type', postType).eq('post_id', postId)
+  return count ?? 0
+}
+
 // Blandad feed — club_posts (från följda) + user_posts (alla) — kronologiskt
 export async function getMixedFeed(): Promise<FeedItem[]> {
   const [club, user] = await Promise.all([getFeed(), getUserPosts()])

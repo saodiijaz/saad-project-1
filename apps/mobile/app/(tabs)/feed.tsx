@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { View, Text, FlatList, StyleSheet, RefreshControl, Pressable, Image } from 'react-native'
 import { useRouter } from 'expo-router'
-import { getMixedFeed, FeedItem } from '../../lib/data'
+import { getMixedFeed, FeedItem, getLikeState, toggleLike, getCommentCount, PostType } from '../../lib/data'
 
 export default function Feed() {
   const router = useRouter()
@@ -31,11 +31,14 @@ export default function Feed() {
           if (item.source === 'club') {
             const p = item.post
             return (
-              <Pressable style={styles.card} onPress={() => router.push(`/club/${p.club.id}`)}>
-                <Text style={styles.clubName}>{p.club.name}</Text>
-                <Text style={styles.title}>{p.title}</Text>
-                <Text style={styles.body} numberOfLines={3}>{p.body}</Text>
-              </Pressable>
+              <View style={styles.card}>
+                <Pressable onPress={() => router.push(`/club/${p.club.id}`)}>
+                  <Text style={styles.clubName}>{p.club.name}</Text>
+                  <Text style={styles.title}>{p.title}</Text>
+                  <Text style={styles.body} numberOfLines={3}>{p.body}</Text>
+                </Pressable>
+                <PostActions type="club" id={p.id} />
+              </View>
             )
           }
           const p = item.post
@@ -44,6 +47,7 @@ export default function Feed() {
               <Text style={styles.clubName}>{p.author?.display_name ?? p.author?.email}</Text>
               {p.image_url && <Image source={{ uri: p.image_url }} style={styles.postImage} />}
               <Text style={styles.body}>{p.body}</Text>
+              <PostActions type="user" id={p.id} />
             </View>
           )
         }}
@@ -54,6 +58,52 @@ export default function Feed() {
     </View>
   )
 }
+
+export function PostActions({ type, id }: { type: PostType; id: string }) {
+  const router = useRouter()
+  const [liked, setLiked] = useState(false)
+  const [likeCount, setLikeCount] = useState(0)
+  const [commentCount, setCommentCount] = useState(0)
+
+  useEffect(() => {
+    getLikeState(type, id).then(s => { setLiked(s.liked); setLikeCount(s.count) })
+    getCommentCount(type, id).then(setCommentCount)
+  }, [type, id])
+
+  async function doLike() {
+    const was = liked
+    setLiked(!was)
+    setLikeCount(c => c + (was ? -1 : 1))
+    try {
+      const now = await toggleLike(type, id)
+      setLiked(now) // sync
+    } catch {
+      // revert on failure
+      setLiked(was); setLikeCount(c => c + (was ? 1 : -1))
+    }
+  }
+
+  return (
+    <View style={actionStyles.row}>
+      <Pressable style={actionStyles.btn} onPress={doLike}>
+        <Text style={[actionStyles.icon, liked && actionStyles.iconActive]}>{liked ? '♥' : '♡'}</Text>
+        <Text style={actionStyles.count}>{likeCount}</Text>
+      </Pressable>
+      <Pressable style={actionStyles.btn} onPress={() => router.push(`/post/${type}/${id}`)}>
+        <Text style={actionStyles.icon}>💬</Text>
+        <Text style={actionStyles.count}>{commentCount}</Text>
+      </Pressable>
+    </View>
+  )
+}
+
+const actionStyles = StyleSheet.create({
+  row: { flexDirection: 'row', gap: 20, marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#eee' },
+  btn: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  icon: { fontSize: 20, color: '#666' },
+  iconActive: { color: '#d33' },
+  count: { fontSize: 14, color: '#666' },
+})
 
 const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
