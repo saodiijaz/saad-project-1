@@ -8,6 +8,7 @@ import { Club } from '../../lib/types'
 import { hasSupabaseConfig } from '../../lib/supabase'
 import { SkeletonList } from '../../components/SkeletonCard'
 import { ErrorState } from '../../components/ErrorState'
+import { PressableScale } from '../../components/PressableScale'
 
 const SPORT_COLORS: Record<string, { bg: string; fg: string }> = {
   hockey: { bg: '#E8F0FE', fg: '#1A73E8' },
@@ -103,7 +104,7 @@ export default function Discover() {
         data={filtered}
         keyExtractor={item => item.id}
         renderItem={({ item }) => (
-          <Pressable style={styles.card} onPress={() => router.push(`/club/${item.id}`)}>
+          <PressableScale style={styles.card} onPress={() => router.push(`/club/${item.id}`)}>
             <Text style={styles.name}>{item.name}</Text>
             <Text style={styles.city}>{item.city}</Text>
             <View style={styles.badgeRow}>
@@ -117,7 +118,7 @@ export default function Discover() {
               })}
             </View>
             <Text style={styles.desc} numberOfLines={2}>{item.description}</Text>
-          </Pressable>
+          </PressableScale>
         )}
         contentContainerStyle={{ padding: 16 }}
         ItemSeparatorComponent={() => <View style={{ height: 12 }} />}

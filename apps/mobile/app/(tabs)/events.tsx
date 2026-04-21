@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router'
 import { getUpcomingEvents, Event } from '../../lib/data'
 import { EmptyState } from '../../components/EmptyState'
 import { SkeletonList } from '../../components/SkeletonCard'
+import { PressableScale } from '../../components/PressableScale'
 
 export default function Events() {
   const router = useRouter()
@@ -37,7 +38,7 @@ export default function Events() {
           />
         }
         renderItem={({ item }) => (
-          <Pressable style={styles.card} onPress={() => router.push(`/event/${item.id}`)}>
+          <PressableScale style={styles.card} onPress={() => router.push(`/event/${item.id}`)}>
             {item.club && <Text style={styles.clubName}>{item.club.name}</Text>}
             <Text style={styles.title}>{item.title}</Text>
             <Text style={styles.date}>
@@ -45,7 +46,7 @@ export default function Events() {
               {item.location && ` · ${item.location}`}
             </Text>
             <Text style={styles.body} numberOfLines={2}>{item.description}</Text>
-          </Pressable>
+          </PressableScale>
         )}
         ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
       />

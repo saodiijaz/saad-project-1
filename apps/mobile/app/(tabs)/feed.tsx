@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router'
 import { getMixedFeed, FeedItem, getLikeState, toggleLike, getCommentCount, PostType } from '../../lib/data'
 import { EmptyState } from '../../components/EmptyState'
 import { SkeletonList } from '../../components/SkeletonCard'
+import { PressableScale } from '../../components/PressableScale'
 
 export default function Feed() {
   const router = useRouter()
@@ -40,11 +41,11 @@ export default function Feed() {
             const p = item.post
             return (
               <View style={styles.card}>
-                <Pressable onPress={() => router.push(`/club/${p.club.id}`)}>
+                <PressableScale onPress={() => router.push(`/club/${p.club.id}`)}>
                   <Text style={styles.clubName}>{p.club.name}</Text>
                   <Text style={styles.title}>{p.title}</Text>
                   <Text style={styles.body} numberOfLines={3}>{p.body}</Text>
-                </Pressable>
+                </PressableScale>
                 <PostActions type="club" id={p.id} />
               </View>
             )
