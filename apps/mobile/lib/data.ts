@@ -290,6 +290,31 @@ export async function updateMyProfile(p: { display_name?: string; city?: string 
   if (error) throw error
 }
 
+export async function uploadAvatar(uri: string): Promise<string> {
+  if (!supabase) throw new Error('Not connected')
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) throw new Error('Not logged in')
+
+  const response = await fetch(uri)
+  const blob = await response.blob()
+  const ext = uri.split('.').pop()?.toLowerCase() ?? 'jpg'
+  const path = `${session.user.id}/avatar.${ext}`
+
+  const { error: uploadErr } = await supabase.storage
+    .from('avatars')
+    .upload(path, blob, { upsert: true, contentType: `image/${ext === 'jpg' ? 'jpeg' : ext}` })
+  if (uploadErr) throw uploadErr
+
+  const { data } = supabase.storage.from('avatars').getPublicUrl(path)
+  const publicUrl = `${data.publicUrl}?t=${Date.now()}` // cache-bust
+
+  const { error: updErr } = await supabase
+    .from('users').update({ avatar_url: publicUrl }).eq('id', session.user.id)
+  if (updErr) throw updErr
+
+  return publicUrl
+}
+
 export async function getFeed(): Promise<FeedPost[]> {
   if (!hasSupabaseConfig || !supabase) return []
   const { data: { session } } = await supabase.auth.getSession()

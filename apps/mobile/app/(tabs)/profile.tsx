@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native'
+import { View, Text, StyleSheet, Pressable, ActivityIndicator, Image } from 'react-native'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { supabase, hasSupabaseConfig } from '../../lib/supabase'
 import { signOut } from '../../lib/auth'
@@ -43,6 +43,15 @@ export default function Profile() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Profil</Text>
+      {profile?.avatar_url ? (
+        <Image source={{ uri: profile.avatar_url }} style={styles.avatar} />
+      ) : (
+        <View style={[styles.avatar, styles.avatarPlaceholder]}>
+          <Text style={styles.avatarInitial}>
+            {(profile?.display_name ?? user?.email ?? '?').slice(0, 1).toUpperCase()}
+          </Text>
+        </View>
+      )}
       {user && (
         <>
           {profile?.display_name ? (
@@ -66,6 +75,9 @@ export default function Profile() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff', padding: 24, alignItems: 'center', justifyContent: 'center' },
   title: { fontSize: 28, fontWeight: '600', marginBottom: 24 },
+  avatar: { width: 96, height: 96, borderRadius: 48, marginBottom: 16, backgroundColor: '#F1EFE8' },
+  avatarPlaceholder: { justifyContent: 'center', alignItems: 'center' },
+  avatarInitial: { fontSize: 36, color: '#0F6E56', fontWeight: '600' },
   name: { fontSize: 22, fontWeight: '500', marginBottom: 4 },
   email: { fontSize: 16, color: '#444', marginBottom: 6 },
   city: { fontSize: 14, color: '#555', marginBottom: 8 },
