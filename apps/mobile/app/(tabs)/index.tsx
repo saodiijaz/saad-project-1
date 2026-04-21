@@ -3,7 +3,7 @@ import {
   View, Text, FlatList, StyleSheet, Pressable, TextInput, ScrollView, RefreshControl,
 } from 'react-native'
 import { useRouter } from 'expo-router'
-import { getClubs, getCities, City } from '../../lib/data'
+import { getClubs, getCities, City, ClubSort } from '../../lib/data'
 import { Club } from '../../lib/types'
 import { hasSupabaseConfig } from '../../lib/supabase'
 import { SkeletonList } from '../../components/SkeletonCard'
@@ -28,6 +28,12 @@ const QUICK_SPORTS = [
   { key: 'triathlon', label: 'Triathlon' },
 ]
 
+const SORTS: Array<{ key: ClubSort; label: string }> = [
+  { key: 'popular', label: 'Populärast' },
+  { key: 'newest', label: 'Nyast' },
+  { key: 'alpha', label: 'A–Ö' },
+]
+
 export default function Discover() {
   const router = useRouter()
   const [clubs, setClubs] = useState<Club[]>([])
@@ -36,13 +42,14 @@ export default function Discover() {
   const [query, setQuery] = useState('')
   const [sport, setSport] = useState<string>('all')
   const [cityName, setCityName] = useState<string>('all') // 'all' or city name
+  const [sortBy, setSortBy] = useState<ClubSort>('popular')
   const [error, setError] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
 
-  function load() {
+  function load(s: ClubSort = sortBy) {
     setError(null)
     setLoading(true)
-    Promise.all([getClubs(), getCities()])
+    Promise.all([getClubs(s), getCities()])
       .then(([cl, ci]) => { setClubs(cl); setCities(ci) })
       .catch(err => setError(err?.message ?? 'Kunde inte ladda föreningar'))
       .finally(() => setLoading(false))
@@ -51,14 +58,19 @@ export default function Discover() {
   async function onRefresh() {
     setRefreshing(true)
     try {
-      const [cl, ci] = await Promise.all([getClubs(), getCities()])
+      const [cl, ci] = await Promise.all([getClubs(sortBy), getCities()])
       setClubs(cl); setCities(ci)
     } finally {
       setRefreshing(false)
     }
   }
 
-  useEffect(() => { load() }, [])
+  function changeSort(s: ClubSort) {
+    setSortBy(s)
+    load(s)
+  }
+
+  useEffect(() => { load('popular') }, [])
 
   const filtered = clubs.filter(c => {
     const matchesQuery =
@@ -107,6 +119,19 @@ export default function Discover() {
         ))}
       </ScrollView>
 
+      <Text style={styles.filterLabel}>Sortera</Text>
+      <View style={styles.segRow}>
+        {SORTS.map(s => (
+          <Pressable
+            key={s.key}
+            style={[styles.seg, sortBy === s.key && styles.segActive]}
+            onPress={() => changeSort(s.key)}
+          >
+            <Text style={[styles.segText, sortBy === s.key && styles.segTextActive]}>{s.label}</Text>
+          </Pressable>
+        ))}
+      </View>
+
       <Text style={styles.filterLabel}>Sport</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
         {QUICK_SPORTS.map(s => (
@@ -122,7 +147,12 @@ export default function Discover() {
         renderItem={({ item }) => (
           <PressableScale style={styles.card} onPress={() => router.push(`/club/${item.id}`)}>
             <Text style={styles.name}>{item.name}</Text>
-            <Text style={styles.city}>{item.city}</Text>
+            <Text style={styles.city}>
+              {item.city}
+              {typeof item.follower_count === 'number' && item.follower_count > 0
+                ? `  ·  ${item.follower_count} följare`
+                : ''}
+            </Text>
             <View style={styles.badgeRow}>
               {item.sports.map(s => {
                 const c = SPORT_COLORS[s] ?? DEFAULT_BADGE
@@ -161,6 +191,11 @@ const styles = StyleSheet.create({
   chipActive: { backgroundColor: '#0F6E56' },
   chipText: { fontSize: 14, color: '#444' },
   chipTextActive: { color: '#fff', fontWeight: '500' },
+  segRow: { flexDirection: 'row', marginHorizontal: 16, marginBottom: 4, borderRadius: 8, borderWidth: 1, borderColor: '#ddd', overflow: 'hidden' },
+  seg: { flex: 1, paddingVertical: 8, alignItems: 'center', backgroundColor: '#fff' },
+  segActive: { backgroundColor: '#0F6E56' },
+  segText: { fontSize: 13, color: '#444' },
+  segTextActive: { color: '#fff', fontWeight: '600' },
   card: { padding: 16, borderWidth: 1, borderColor: '#eee', borderRadius: 12, backgroundColor: '#fafafa' },
   name: { fontSize: 18, fontWeight: '600', marginBottom: 4 },
   city: { fontSize: 13, color: '#666', marginBottom: 8 },

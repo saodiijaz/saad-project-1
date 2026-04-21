@@ -2,21 +2,33 @@ import { supabase, hasSupabaseConfig } from './supabase'
 import { mockClubs } from './mock-data'
 import { Club, ClubPost } from './types'
 
-export async function getClubs(): Promise<Club[]> {
+export type ClubSort = 'popular' | 'newest' | 'alpha'
+
+export async function getClubs(sort: ClubSort = 'alpha'): Promise<Club[]> {
   if (!hasSupabaseConfig || !supabase) return mockClubs
 
-  const { data, error } = await supabase
-    .from('clubs')
-    .select(`
-      id, name, slug, description, logo_url, cover_url,
-      city, website, contact_email, created_at,
-      club_sports ( sports ( slug ) )
-    `)
-    .order('name')
+  // Hämta klubbar + följar-rader. Vi aggregerar följarantalet i JS eftersom
+  // Supabase REST inte stödjer GROUP BY direkt på joined tables.
+  const [clubsRes, followsRes] = await Promise.all([
+    supabase
+      .from('clubs')
+      .select(`
+        id, name, slug, description, logo_url, cover_url,
+        city, website, contact_email, created_at,
+        club_sports ( sports ( slug ) )
+      `),
+    supabase.from('follows').select('club_id'),
+  ])
 
-  if (error) throw error
+  if (clubsRes.error) throw clubsRes.error
 
-  return (data ?? []).map((c: any) => ({
+  const followerCounts = new Map<string, number>()
+  // any: follows-select returns minimal { club_id: string } rows
+  for (const row of (followsRes.data ?? []) as any[]) {
+    followerCounts.set(row.club_id, (followerCounts.get(row.club_id) ?? 0) + 1)
+  }
+
+  const clubs: Club[] = (clubsRes.data ?? []).map((c: any) => ({
     id: c.id,
     name: c.name,
     slug: c.slug,
@@ -28,7 +40,18 @@ export async function getClubs(): Promise<Club[]> {
     contact_email: c.contact_email,
     created_at: c.created_at,
     sports: (c.club_sports ?? []).map((cs: any) => cs.sports?.slug).filter(Boolean),
+    follower_count: followerCounts.get(c.id) ?? 0,
   }))
+
+  if (sort === 'popular') {
+    clubs.sort((a, b) => (b.follower_count ?? 0) - (a.follower_count ?? 0) || a.name.localeCompare(b.name))
+  } else if (sort === 'newest') {
+    clubs.sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''))
+  } else {
+    clubs.sort((a, b) => a.name.localeCompare(b.name))
+  }
+
+  return clubs
 }
 
 export async function getClubById(id: string): Promise<Club | null> {

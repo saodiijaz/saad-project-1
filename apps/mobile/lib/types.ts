@@ -10,6 +10,8 @@ export type Club = {
   contact_email: string | null
   sports: string[]
   created_at: string
+  /** populated by getClubs() so Discover can sort by popularity */
+  follower_count?: number
 }
 
 export type ClubPost = {
