@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, Alert } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, Alert, Share } from 'react-native'
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router'
 import {
   getClubById, isFollowing, followClub, unfollowClub,
@@ -26,6 +26,20 @@ export default function ClubProfile() {
     isClubAdmin(id).then(setAdmin)
     getClubFollowerCount(id).then(setFollowerCount)
   }, [id])
+
+  async function shareClub() {
+    if (!club || !id) return
+    const deepLink = `sportmeet://club/${id}`
+    const webFallback = `https://sportmeet.app/club/${id}` // placeholder-domän
+    try {
+      await Share.share({
+        message: `Kolla in ${club.name} på SportMeet!\n\n${deepLink}\n\n(Webb: ${webFallback})`,
+        title: club.name,
+      })
+    } catch {
+      // User cancelled or failed — silent
+    }
+  }
 
   async function toggleFollow() {
     if (!id || followBusy) return
@@ -60,6 +74,10 @@ export default function ClubProfile() {
           <Text style={[styles.followText, following && styles.followingText]}>
             {followBusy ? '…' : following ? 'Följer ✓' : 'Följ förening'}
           </Text>
+        </Pressable>
+
+        <Pressable style={styles.shareBtn} onPress={shareClub}>
+          <Text style={styles.shareBtnText}>📤 Dela</Text>
         </Pressable>
 
         {admin && (
@@ -119,6 +137,8 @@ const styles = StyleSheet.create({
   link: { fontSize: 14, color: '#555', marginBottom: 6 },
   adminBtn: { backgroundColor: '#F1EFE8', padding: 12, borderRadius: 8, alignItems: 'center', marginBottom: 16, borderWidth: 1, borderColor: '#0F6E56' },
   adminBtnText: { color: '#0F6E56', fontSize: 15, fontWeight: '500' },
+  shareBtn: { padding: 12, borderRadius: 8, alignItems: 'center', marginBottom: 12, borderWidth: 1, borderColor: '#ddd' },
+  shareBtnText: { fontSize: 15, color: '#333' },
   sectionTitle: { fontSize: 18, fontWeight: '600', marginBottom: 12, color: '#222' },
   postCard: { padding: 14, backgroundColor: '#fafafa', borderRadius: 10, marginBottom: 10, borderWidth: 1, borderColor: '#eee' },
   postTitle: { fontSize: 16, fontWeight: '600', marginBottom: 4 },
