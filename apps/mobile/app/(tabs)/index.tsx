@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import {
-  View, Text, FlatList, StyleSheet, Pressable, ActivityIndicator, TextInput, ScrollView,
+  View, Text, FlatList, StyleSheet, Pressable, TextInput, ScrollView,
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { getClubs, getCities, City } from '../../lib/data'
 import { Club } from '../../lib/types'
 import { hasSupabaseConfig } from '../../lib/supabase'
+import { SkeletonList } from '../../components/SkeletonCard'
 
 const SPORT_COLORS: Record<string, { bg: string; fg: string }> = {
   hockey: { bg: '#E8F0FE', fg: '#1A73E8' },
@@ -50,7 +51,7 @@ export default function Discover() {
     return matchesQuery && matchesSport && matchesCity
   })
 
-  if (loading) return <ActivityIndicator style={{ marginTop: 40 }} />
+  if (loading) return <SkeletonList count={5} />
 
   return (
     <View style={styles.container}>

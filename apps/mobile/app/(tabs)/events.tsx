@@ -3,6 +3,7 @@ import { View, Text, FlatList, StyleSheet, RefreshControl, Pressable } from 'rea
 import { useRouter } from 'expo-router'
 import { getUpcomingEvents, Event } from '../../lib/data'
 import { EmptyState } from '../../components/EmptyState'
+import { SkeletonList } from '../../components/SkeletonCard'
 
 export default function Events() {
   const router = useRouter()
@@ -17,7 +18,7 @@ export default function Events() {
 
   useEffect(() => { load() }, [load])
 
-  if (loading) return <View style={styles.center}><Text>Laddar…</Text></View>
+  if (loading) return <SkeletonList count={5} />
 
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>

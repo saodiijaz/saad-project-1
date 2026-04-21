@@ -3,6 +3,7 @@ import { View, Text, FlatList, StyleSheet, RefreshControl, Pressable, Image } fr
 import { useRouter } from 'expo-router'
 import { getMixedFeed, FeedItem, getLikeState, toggleLike, getCommentCount, PostType } from '../../lib/data'
 import { EmptyState } from '../../components/EmptyState'
+import { SkeletonList } from '../../components/SkeletonCard'
 
 export default function Feed() {
   const router = useRouter()
@@ -17,7 +18,7 @@ export default function Feed() {
 
   useEffect(() => { load() }, [load])
 
-  if (loading) return <View style={styles.center}><Text style={styles.empty}>Laddar…</Text></View>
+  if (loading) return <SkeletonList count={5} />
 
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
