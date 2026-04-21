@@ -12,6 +12,7 @@ export default function NewEvent() {
   const [startsAt, setStartsAt] = useState('')
   const [clubs, setClubs] = useState<Array<{id:string;name:string}>>([])
   const [clubId, setClubId] = useState<string | undefined>()
+  const [isPrivate, setIsPrivate] = useState(false)
   const [busy, setBusy] = useState(false)
 
   useEffect(() => { getMyAdminClubs().then(setClubs) }, [])
@@ -27,6 +28,7 @@ export default function NewEvent() {
         location: location.trim() || undefined,
         startsAt: new Date(startsAt).toISOString(),
         clubId,
+        isPublic: !isPrivate,
       })
       hapticSuccess()
       router.replace(`/event/${newId}`)
@@ -61,6 +63,15 @@ export default function NewEvent() {
           ))}
         </>
       )}
+      <Pressable
+        style={[styles.privateRow, isPrivate && styles.privateRowOn]}
+        onPress={() => setIsPrivate(p => !p)}
+      >
+        <Text style={[styles.privateLabel, isPrivate && styles.privateLabelOn]}>
+          {isPrivate ? '🔒 Privat — endast inbjudna' : '🌍 Publikt — alla kan se'}
+        </Text>
+      </Pressable>
+
       <Pressable style={styles.btn} onPress={submit} disabled={busy}>
         <Text style={styles.btnText}>{busy ? '…' : 'Skapa event'}</Text>
       </Pressable>
@@ -77,4 +88,9 @@ const styles = StyleSheet.create({
   clubRowOn: { borderColor: '#0F6E56', backgroundColor: '#F1EFE8' },
   btn: { backgroundColor: '#0F6E56', padding: 14, borderRadius: 8, alignItems: 'center', marginTop: 24, marginBottom: 40 },
   btnText: { color: '#fff', fontSize: 16, fontWeight: '500' },
+  privateRow: { marginTop: 18, padding: 14, borderRadius: 8, borderWidth: 1, borderColor: '#eee', alignItems: 'center' },
+  privateRowOn: { borderColor: '#0F6E56', backgroundColor: '#F1EFE8' },
+  privateLabel: { fontSize: 14, color: '#666' },
+  privateLabelOn: { color: '#0F6E56', fontWeight: '600' },
 })
+

@@ -308,6 +308,7 @@ export async function leaveEvent(eventId: string): Promise<void> {
 export async function createEvent(p: {
   title: string; description: string; location?: string;
   startsAt: string; endsAt?: string; clubId?: string; maxAttendees?: number;
+  isPublic?: boolean;
 }): Promise<string> {
   if (!supabase) throw new Error('Not connected')
   const { data: { session } } = await supabase.auth.getSession()
@@ -317,7 +318,7 @@ export async function createEvent(p: {
     location: p.location ?? null, starts_at: p.startsAt,
     ends_at: p.endsAt ?? null, club_id: p.clubId ?? null,
     max_attendees: p.maxAttendees ?? null,
-    created_by: session.user.id, is_public: true,
+    created_by: session.user.id, is_public: p.isPublic ?? true,
   }).select('id').single()
   if (error) throw error
   return data.id
