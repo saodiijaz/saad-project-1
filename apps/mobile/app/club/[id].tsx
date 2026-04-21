@@ -8,6 +8,7 @@ import {
 } from '../../lib/data'
 import { Club, ClubPost } from '../../lib/types'
 import { hapticLight, hapticError } from '../../lib/haptics'
+import { track } from '../../lib/analytics'
 
 export default function ClubProfile() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -23,6 +24,7 @@ export default function ClubProfile() {
 
   useEffect(() => {
     if (!id) return
+    track('club_viewed', { club_id: id })
     getClubById(id).then(setClub).finally(() => setLoading(false))
     isFollowing(id).then(setFollowing)
     getClubPosts(id).then(setPosts)
@@ -51,8 +53,13 @@ export default function ClubProfile() {
     if (!id || followBusy) return
     setFollowBusy(true)
     try {
-      if (following) { await unfollowClub(id); setFollowing(false) }
-      else { await followClub(id); setFollowing(true) }
+      if (following) {
+        await unfollowClub(id); setFollowing(false)
+        track('club_unfollowed', { club_id: id })
+      } else {
+        await followClub(id); setFollowing(true)
+        track('club_followed', { club_id: id })
+      }
       hapticLight()
     } catch (e: any) {
       hapticError()

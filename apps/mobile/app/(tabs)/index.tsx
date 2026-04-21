@@ -5,6 +5,7 @@ import {
 import { useRouter } from 'expo-router'
 import { getClubs, getCities, City, ClubSort } from '../../lib/data'
 import { getUserLocation, formatKm } from '../../lib/geo'
+import { track } from '../../lib/analytics'
 import { Club } from '../../lib/types'
 import { hasSupabaseConfig } from '../../lib/supabase'
 import { SkeletonList } from '../../components/SkeletonCard'
@@ -89,7 +90,10 @@ export default function Discover() {
     load(s)
   }
 
-  useEffect(() => { load('popular') }, [])
+  useEffect(() => {
+    track('discover_opened')
+    load('popular')
+  }, [])
 
   const filtered = clubs.filter(c => {
     const matchesQuery =

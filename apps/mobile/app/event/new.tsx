@@ -3,6 +3,7 @@ import { View, Text, TextInput, Pressable, StyleSheet, Alert, ScrollView } from 
 import { useRouter, Stack } from 'expo-router'
 import { createEvent, getMyAdminClubs } from '../../lib/data'
 import { hapticSuccess, hapticError } from '../../lib/haptics'
+import { track } from '../../lib/analytics'
 
 export default function NewEvent() {
   const router = useRouter()
@@ -31,6 +32,7 @@ export default function NewEvent() {
         isPublic: !isPrivate,
       })
       hapticSuccess()
+      track('event_created', { event_id: newId, is_public: !isPrivate, club_id: clubId ?? null })
       router.replace(`/event/${newId}`)
     } catch (e: any) {
       hapticError()
