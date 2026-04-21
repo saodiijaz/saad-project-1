@@ -4,12 +4,14 @@ import { useRouter, useFocusEffect } from 'expo-router'
 import { supabase, hasSupabaseConfig } from '../../lib/supabase'
 import { signOut } from '../../lib/auth'
 import { getMyProfile, UserProfile } from '../../lib/data'
+import { getMyBadges, Badge } from '../../lib/badges'
 import type { User } from '@supabase/supabase-js'
 
 export default function Profile() {
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [badges, setBadges] = useState<Badge[]>([])
   const [loading, setLoading] = useState(true)
 
   const load = useCallback(async () => {
@@ -17,12 +19,14 @@ export default function Profile() {
       setLoading(false)
       return
     }
-    const [{ data }, p] = await Promise.all([
+    const [{ data }, p, b] = await Promise.all([
       supabase.auth.getUser(),
       getMyProfile(),
+      getMyBadges().catch(() => [] as Badge[]),
     ])
     setUser(data.user)
     setProfile(p)
+    setBadges(b)
     setLoading(false)
   }, [])
 
@@ -62,6 +66,17 @@ export default function Profile() {
           <Text style={styles.meta}>Inloggad sedan {new Date(user.created_at).toLocaleDateString('sv-SE')}</Text>
         </>
       )}
+      {badges.length > 0 && (
+        <View style={styles.badgesRow}>
+          {badges.map(b => (
+            <View key={b.id} style={[styles.badge, !b.earned && styles.badgeLocked]}>
+              <Text style={[styles.badgeEmoji, !b.earned && styles.badgeEmojiLocked]}>{b.emoji}</Text>
+              <Text style={[styles.badgeLabel, !b.earned && styles.badgeLabelLocked]}>{b.label}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
       <Pressable style={styles.editBtn} onPress={() => router.push('/edit-profile')}>
         <Text style={styles.editBtnText}>Redigera profil</Text>
       </Pressable>
@@ -101,4 +116,11 @@ const styles = StyleSheet.create({
     padding: 14, borderRadius: 8, paddingHorizontal: 32,
   },
   buttonText: { color: '#E24B4A', fontSize: 16, fontWeight: '500' },
+  badgesRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginBottom: 16, maxWidth: 320 },
+  badge: { width: 88, paddingVertical: 10, borderRadius: 10, backgroundColor: '#F1EFE8', alignItems: 'center' },
+  badgeLocked: { backgroundColor: '#F5F5F5' },
+  badgeEmoji: { fontSize: 24 },
+  badgeEmojiLocked: { opacity: 0.3 },
+  badgeLabel: { fontSize: 11, color: '#0F6E56', fontWeight: '600', marginTop: 2 },
+  badgeLabelLocked: { color: '#bbb', fontWeight: '500' },
 })
