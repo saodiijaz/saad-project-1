@@ -66,6 +66,12 @@ export default function ClubProfile() {
           </Pressable>
         )}
 
+        {admin && (
+          <Pressable style={styles.adminBtn} onPress={() => router.push(`/club/${id}/edit`)}>
+            <Text style={styles.adminBtnText}>✎ Redigera förening</Text>
+          </Pressable>
+        )}
+
         {club.website && <Text style={styles.link}>🌐 {club.website}</Text>}
         {club.contact_email && <Text style={styles.link}>✉️ {club.contact_email}</Text>}
 

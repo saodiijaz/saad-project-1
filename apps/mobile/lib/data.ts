@@ -128,6 +128,32 @@ export async function getFollowedClubs(): Promise<Club[]> {
   }))
 }
 
+// ---------- Club admin (update + assets) ----------
+
+export async function updateClub(clubId: string, p: {
+  name?: string; description?: string; website?: string;
+  contact_email?: string; logo_url?: string; cover_url?: string;
+}): Promise<void> {
+  if (!supabase) throw new Error('Not connected')
+  const { error } = await supabase.from('clubs').update(p).eq('id', clubId)
+  if (error) throw error
+}
+
+export async function uploadClubAsset(
+  clubId: string, kind: 'logo' | 'cover', uri: string
+): Promise<string> {
+  if (!supabase) throw new Error('Not connected')
+  const response = await fetch(uri)
+  const blob = await response.blob()
+  const ext = uri.split('.').pop()?.toLowerCase() ?? 'jpg'
+  const path = `${clubId}/${kind}.${ext}`
+  const { error } = await supabase.storage
+    .from('club-assets').upload(path, blob, { upsert: true, contentType: `image/${ext === 'jpg' ? 'jpeg' : ext}` })
+  if (error) throw error
+  const { data } = supabase.storage.from('club-assets').getPublicUrl(path)
+  return `${data.publicUrl}?t=${Date.now()}`
+}
+
 // ---------- Club posts ----------
 
 export async function getClubPosts(clubId: string): Promise<ClubPost[]> {
