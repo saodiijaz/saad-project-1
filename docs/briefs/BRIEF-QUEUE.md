@@ -25,20 +25,20 @@
 
 | # | ID | Namn | Status | Blockad av |
 |---|---|---|---|---|
-| 1 | BRIEF-DB-003 | Events-seed för LHC | ⬜ TODO | migration 006 (Zivar kör) |
-| 2 | BRIEF-UI-009 | Profil: avatar upload | ⬜ TODO | — |
-| 3 | BRIEF-DB-004 | Friends/vänsystem schema | ⬜ TODO | — |
-| 4 | BRIEF-UI-010 | Vänsystem UI (lägg till/vänlista) | ⬜ TODO | DB-004 |
-| 5 | BRIEF-DB-005 | User posts schema | ⬜ TODO | — |
-| 6 | BRIEF-UI-011 | User posts UI (skapa + visa) | ⬜ TODO | DB-005 |
-| 7 | BRIEF-DB-006 | Kommentarer + likes schema | ⬜ TODO | DB-005 |
-| 8 | BRIEF-UI-012 | Kommentarer + likes UI | ⬜ TODO | DB-006 |
-| 9 | BRIEF-UI-013 | Föreningsadmin: redigera profil + logo | ⬜ TODO | — |
-| 10 | BRIEF-UI-014 | Föreningsadmin: följarlista | ⬜ TODO | — |
-| 11 | BRIEF-DB-007 | Flera städer stöd | ⬜ TODO | — |
-| 12 | BRIEF-UI-015 | Stad-filter i Upptäck | ⬜ TODO | DB-007 |
+| 1 | BRIEF-DB-003 | Events-seed för LHC | ✅ DONE | — |
+| 2 | BRIEF-UI-009 | Profil: avatar upload | ✅ DONE | — |
+| 3 | BRIEF-DB-004 | Friends/vänsystem schema | ✅ DONE | — |
+| 4 | BRIEF-UI-010 | Vänsystem UI (lägg till/vänlista) | ✅ DONE | — |
+| 5 | BRIEF-DB-005 | User posts schema | ✅ DONE | — |
+| 6 | BRIEF-UI-011 | User posts UI (skapa + visa) | ✅ DONE | — |
+| 7 | BRIEF-DB-006 | Kommentarer + likes schema | ✅ DONE | — |
+| 8 | BRIEF-UI-012 | Kommentarer + likes UI | ✅ DONE | — |
+| 9 | BRIEF-UI-013 | Föreningsadmin: redigera profil + logo | ✅ DONE | — |
+| 10 | BRIEF-UI-014 | Föreningsadmin: följarlista | ✅ DONE | — |
+| 11 | BRIEF-DB-007 | Flera städer stöd | ✅ DONE | — |
+| 12 | BRIEF-UI-015 | Stad-filter i Upptäck | ✅ DONE | — |
 | 13 | BRIEF-UI-016 | Karta över föreningar | 🟡 NEEDS-INPUT | val av kart-bibliotek |
-| 14 | BRIEF-IN-002 | Deep linking (dela föreningslänk) | ⬜ TODO | — |
+| 14 | BRIEF-IN-002 | Deep linking (dela föreningslänk) | ✅ DONE | — |
 | 15 | BRIEF-IN-003 | Push-notiser setup (Expo push) | 🟡 NEEDS-INPUT | Expo push account |
 
 ---
