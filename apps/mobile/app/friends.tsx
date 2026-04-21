@@ -5,6 +5,7 @@ import {
   searchUsers, sendFriendRequest, getFriends, getPendingRequests,
   respondToFriendRequest, removeFriend, FriendUser, FriendRequest,
 } from '../lib/data'
+import { EmptyState } from '../components/EmptyState'
 
 type Tab = 'friends' | 'requests' | 'search'
 
@@ -71,7 +72,13 @@ export default function FriendsScreen() {
           data={friends}
           keyExtractor={u => u.id}
           contentContainerStyle={{ padding: 16 }}
-          ListEmptyComponent={<Text style={styles.empty}>Inga vänner än. Sök upp någon!</Text>}
+          ListEmptyComponent={
+            <EmptyState
+              emoji="🤝"
+              title="Inga vänner än"
+              description="Sök upp någon i Sök-tabben för att skicka din första vänförfrågan."
+            />
+          }
           renderItem={({ item }) => (
             <View style={styles.row}>
               <UserAvatar user={item} />
@@ -92,7 +99,13 @@ export default function FriendsScreen() {
           data={requests}
           keyExtractor={r => r.id}
           contentContainerStyle={{ padding: 16 }}
-          ListEmptyComponent={<Text style={styles.empty}>Inga vänförfrågningar</Text>}
+          ListEmptyComponent={
+            <EmptyState
+              emoji="✉️"
+              title="Inga förfrågningar"
+              description="När någon skickar dig en vänförfrågan dyker den upp här."
+            />
+          }
           renderItem={({ item }) => (
             <View style={styles.row}>
               <UserAvatar user={item.from} />

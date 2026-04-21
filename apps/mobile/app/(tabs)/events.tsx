@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { View, Text, FlatList, StyleSheet, RefreshControl, Pressable } from 'react-native'
 import { useRouter } from 'expo-router'
 import { getUpcomingEvents, Event } from '../../lib/data'
+import { EmptyState } from '../../components/EmptyState'
 
 export default function Events() {
   const router = useRouter()
@@ -25,7 +26,15 @@ export default function Events() {
         keyExtractor={e => e.id}
         contentContainerStyle={{ padding: 16 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load() }} />}
-        ListEmptyComponent={<Text style={styles.empty}>Inga kommande events. Skapa ett med + knappen.</Text>}
+        ListEmptyComponent={
+          <EmptyState
+            emoji="📅"
+            title="Inga kommande events"
+            description="Det finns inga events just nu. Skapa det första!"
+            actionLabel="+ Skapa event"
+            onAction={() => router.push('/event/new')}
+          />
+        }
         renderItem={({ item }) => (
           <Pressable style={styles.card} onPress={() => router.push(`/event/${item.id}`)}>
             {item.club && <Text style={styles.clubName}>{item.club.name}</Text>}

@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { View, Text, FlatList, StyleSheet, RefreshControl, Pressable, Image } from 'react-native'
 import { useRouter } from 'expo-router'
 import { getMixedFeed, FeedItem, getLikeState, toggleLike, getCommentCount, PostType } from '../../lib/data'
+import { EmptyState } from '../../components/EmptyState'
 
 export default function Feed() {
   const router = useRouter()
@@ -25,7 +26,13 @@ export default function Feed() {
         keyExtractor={i => `${i.source}-${i.post.id}`}
         contentContainerStyle={{ padding: 16 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load() }} />}
-        ListEmptyComponent={<Text style={styles.empty}>Följ föreningar eller vänner för att se inlägg här.</Text>}
+        ListEmptyComponent={
+          <EmptyState
+            emoji="📣"
+            title="Inget i flödet ännu"
+            description="Följ föreningar i Upptäck eller lägg till vänner för att fylla flödet."
+          />
+        }
         ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
         renderItem={({ item }) => {
           if (item.source === 'club') {
