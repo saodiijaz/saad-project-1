@@ -1,10 +1,15 @@
 import { supabase, hasSupabaseConfig } from './supabase'
 import { mockClubs } from './mock-data'
 import { Club, ClubPost } from './types'
+import { haversineKm } from './geo'
 
-export type ClubSort = 'popular' | 'newest' | 'alpha'
+export type ClubSort = 'popular' | 'newest' | 'alpha' | 'nearby'
 
-export async function getClubs(sort: ClubSort = 'alpha'): Promise<Club[]> {
+export async function getClubs(
+  sort: ClubSort = 'alpha',
+  userLat?: number,
+  userLng?: number,
+): Promise<Club[]> {
   if (!hasSupabaseConfig || !supabase) return mockClubs
 
   // Hämta klubbar + följar-rader. Vi aggregerar följarantalet i JS eftersom
@@ -15,6 +20,7 @@ export async function getClubs(sort: ClubSort = 'alpha'): Promise<Club[]> {
       .select(`
         id, name, slug, description, logo_url, cover_url,
         city, website, contact_email, created_at,
+        cities ( latitude, longitude ),
         club_sports ( sports ( slug ) )
       `),
     supabase.from('follows').select('club_id'),
@@ -28,25 +34,44 @@ export async function getClubs(sort: ClubSort = 'alpha'): Promise<Club[]> {
     followerCounts.set(row.club_id, (followerCounts.get(row.club_id) ?? 0) + 1)
   }
 
-  const clubs: Club[] = (clubsRes.data ?? []).map((c: any) => ({
-    id: c.id,
-    name: c.name,
-    slug: c.slug,
-    description: c.description,
-    logo_url: c.logo_url,
-    cover_url: c.cover_url,
-    city: c.city,
-    website: c.website,
-    contact_email: c.contact_email,
-    created_at: c.created_at,
-    sports: (c.club_sports ?? []).map((cs: any) => cs.sports?.slug).filter(Boolean),
-    follower_count: followerCounts.get(c.id) ?? 0,
-  }))
+  const clubs: Club[] = (clubsRes.data ?? []).map((c: any) => {
+    const lat = c.cities?.latitude
+    const lng = c.cities?.longitude
+    let distance: number | undefined
+    if (
+      sort === 'nearby' &&
+      typeof userLat === 'number' && typeof userLng === 'number' &&
+      typeof lat === 'number' && typeof lng === 'number'
+    ) {
+      distance = haversineKm(userLat, userLng, lat, lng)
+    }
+    return {
+      id: c.id,
+      name: c.name,
+      slug: c.slug,
+      description: c.description,
+      logo_url: c.logo_url,
+      cover_url: c.cover_url,
+      city: c.city,
+      website: c.website,
+      contact_email: c.contact_email,
+      created_at: c.created_at,
+      sports: (c.club_sports ?? []).map((cs: any) => cs.sports?.slug).filter(Boolean),
+      follower_count: followerCounts.get(c.id) ?? 0,
+      distance_km: distance,
+    }
+  })
 
   if (sort === 'popular') {
     clubs.sort((a, b) => (b.follower_count ?? 0) - (a.follower_count ?? 0) || a.name.localeCompare(b.name))
   } else if (sort === 'newest') {
     clubs.sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''))
+  } else if (sort === 'nearby') {
+    clubs.sort((a, b) => {
+      const da = a.distance_km ?? Number.POSITIVE_INFINITY
+      const db = b.distance_km ?? Number.POSITIVE_INFINITY
+      return da - db
+    })
   } else {
     clubs.sort((a, b) => a.name.localeCompare(b.name))
   }

@@ -12,6 +12,8 @@ export type Club = {
   created_at: string
   /** populated by getClubs() so Discover can sort by popularity */
   follower_count?: number
+  /** populated by getClubs('nearby', lat, lng) — km to club's city */
+  distance_km?: number
 }
 
 export type ClubPost = {

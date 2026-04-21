@@ -4,6 +4,7 @@ import {
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { getClubs, getCities, City, ClubSort } from '../../lib/data'
+import { getUserLocation, formatKm } from '../../lib/geo'
 import { Club } from '../../lib/types'
 import { hasSupabaseConfig } from '../../lib/supabase'
 import { SkeletonList } from '../../components/SkeletonCard'
@@ -30,6 +31,7 @@ const QUICK_SPORTS = [
 
 const SORTS: Array<{ key: ClubSort; label: string }> = [
   { key: 'popular', label: 'Populärast' },
+  { key: 'nearby', label: 'Nära mig' },
   { key: 'newest', label: 'Nyast' },
   { key: 'alpha', label: 'A–Ö' },
 ]
@@ -43,13 +45,14 @@ export default function Discover() {
   const [sport, setSport] = useState<string>('all')
   const [cityName, setCityName] = useState<string>('all') // 'all' or city name
   const [sortBy, setSortBy] = useState<ClubSort>('popular')
+  const [userCoords, setUserCoords] = useState<{ latitude: number; longitude: number } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
 
-  function load(s: ClubSort = sortBy) {
+  function load(s: ClubSort = sortBy, coords = userCoords) {
     setError(null)
     setLoading(true)
-    Promise.all([getClubs(s), getCities()])
+    Promise.all([getClubs(s, coords?.latitude, coords?.longitude), getCities()])
       .then(([cl, ci]) => { setClubs(cl); setCities(ci) })
       .catch(err => setError(err?.message ?? 'Kunde inte ladda föreningar'))
       .finally(() => setLoading(false))
@@ -58,14 +61,30 @@ export default function Discover() {
   async function onRefresh() {
     setRefreshing(true)
     try {
-      const [cl, ci] = await Promise.all([getClubs(sortBy), getCities()])
+      const [cl, ci] = await Promise.all([
+        getClubs(sortBy, userCoords?.latitude, userCoords?.longitude),
+        getCities(),
+      ])
       setClubs(cl); setCities(ci)
     } finally {
       setRefreshing(false)
     }
   }
 
-  function changeSort(s: ClubSort) {
+  async function changeSort(s: ClubSort) {
+    if (s === 'nearby') {
+      const coords = userCoords ?? (await getUserLocation())
+      if (!coords) {
+        // Permission denied / unavailable — fallback to popular
+        setSortBy('popular')
+        load('popular')
+        return
+      }
+      setUserCoords(coords)
+      setSortBy('nearby')
+      load('nearby', coords)
+      return
+    }
     setSortBy(s)
     load(s)
   }
@@ -151,6 +170,9 @@ export default function Discover() {
               {item.city}
               {typeof item.follower_count === 'number' && item.follower_count > 0
                 ? `  ·  ${item.follower_count} följare`
+                : ''}
+              {typeof item.distance_km === 'number'
+                ? `  ·  ${formatKm(item.distance_km)}`
                 : ''}
             </Text>
             <View style={styles.badgeRow}>
