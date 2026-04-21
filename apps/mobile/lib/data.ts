@@ -429,3 +429,68 @@ export async function getFeed(): Promise<FeedPost[]> {
   if (error) throw error
   return (data ?? []).map((p: any) => ({ ...p, club: p.clubs })) as FeedPost[]
 }
+
+// ---------- User posts ----------
+
+export type UserPost = {
+  id: string
+  author_id: string
+  body: string
+  image_url: string | null
+  created_at: string
+  author?: { id: string; display_name: string | null; avatar_url: string | null; email: string }
+}
+
+// Unified feed item — diskrimineras på source
+export type FeedItem =
+  | { source: 'club'; post: FeedPost }
+  | { source: 'user'; post: UserPost }
+
+export async function uploadUserPostImage(uri: string): Promise<string> {
+  if (!supabase) throw new Error('Not connected')
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) throw new Error('Not logged in')
+  const response = await fetch(uri)
+  const blob = await response.blob()
+  const ext = uri.split('.').pop()?.toLowerCase() ?? 'jpg'
+  const path = `${session.user.id}/${Date.now()}.${ext}`
+  const { error } = await supabase.storage
+    .from('user-posts').upload(path, blob, { contentType: `image/${ext === 'jpg' ? 'jpeg' : ext}` })
+  if (error) throw error
+  return supabase.storage.from('user-posts').getPublicUrl(path).data.publicUrl
+}
+
+export async function createUserPost(p: { body: string; imageUrl?: string }): Promise<void> {
+  if (!supabase) throw new Error('Not connected')
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) throw new Error('Not logged in')
+  const { error } = await supabase.from('user_posts').insert({
+    author_id: session.user.id,
+    body: p.body,
+    image_url: p.imageUrl ?? null,
+  })
+  if (error) throw error
+}
+
+export async function getUserPosts(limit = 50): Promise<UserPost[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase
+    .from('user_posts')
+    .select('*, author:author_id(id, display_name, avatar_url, email)')
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  if (error) throw error
+  return (data ?? []) as UserPost[]
+}
+
+// Blandad feed — club_posts (från följda) + user_posts (alla) — kronologiskt
+export async function getMixedFeed(): Promise<FeedItem[]> {
+  const [club, user] = await Promise.all([getFeed(), getUserPosts()])
+  const items: FeedItem[] = [
+    ...club.map(p => ({ source: 'club' as const, post: p })),
+    ...user.map(p => ({ source: 'user' as const, post: p })),
+  ]
+  return items.sort((a, b) =>
+    new Date(b.post.created_at).getTime() - new Date(a.post.created_at).getTime()
+  )
+}
