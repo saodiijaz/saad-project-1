@@ -231,6 +231,36 @@ export async function leaveEvent(eventId: string): Promise<void> {
     .eq('event_id', eventId).eq('user_id', session.user.id)
 }
 
+export async function createEvent(p: {
+  title: string; description: string; location?: string;
+  startsAt: string; endsAt?: string; clubId?: string; maxAttendees?: number;
+}): Promise<string> {
+  if (!supabase) throw new Error('Not connected')
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) throw new Error('Not logged in')
+  const { data, error } = await supabase.from('events').insert({
+    title: p.title, description: p.description,
+    location: p.location ?? null, starts_at: p.startsAt,
+    ends_at: p.endsAt ?? null, club_id: p.clubId ?? null,
+    max_attendees: p.maxAttendees ?? null,
+    created_by: session.user.id, is_public: true,
+  }).select('id').single()
+  if (error) throw error
+  return data.id
+}
+
+export async function getMyAdminClubs(): Promise<Array<{id: string; name: string}>> {
+  if (!supabase) return []
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) return []
+  const { data } = await supabase
+    .from('club_members')
+    .select('clubs(id, name)')
+    .eq('user_id', session.user.id)
+    .in('role', ['admin', 'editor'])
+  return (data ?? []).map((r: any) => r.clubs)
+}
+
 export async function getFeed(): Promise<FeedPost[]> {
   if (!hasSupabaseConfig || !supabase) return []
   const { data: { session } } = await supabase.auth.getSession()
