@@ -7,6 +7,7 @@ import { getClubs, getCities, City } from '../../lib/data'
 import { Club } from '../../lib/types'
 import { hasSupabaseConfig } from '../../lib/supabase'
 import { SkeletonList } from '../../components/SkeletonCard'
+import { ErrorState } from '../../components/ErrorState'
 
 const SPORT_COLORS: Record<string, { bg: string; fg: string }> = {
   hockey: { bg: '#E8F0FE', fg: '#1A73E8' },
@@ -34,13 +35,18 @@ export default function Discover() {
   const [query, setQuery] = useState('')
   const [sport, setSport] = useState<string>('all')
   const [cityName, setCityName] = useState<string>('all') // 'all' or city name
+  const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
+  function load() {
+    setError(null)
+    setLoading(true)
     Promise.all([getClubs(), getCities()])
       .then(([cl, ci]) => { setClubs(cl); setCities(ci) })
-      .catch(err => console.error('Failed to load', err))
+      .catch(err => setError(err?.message ?? 'Kunde inte ladda föreningar'))
       .finally(() => setLoading(false))
-  }, [])
+  }
+
+  useEffect(() => { load() }, [])
 
   const filtered = clubs.filter(c => {
     const matchesQuery =
@@ -51,6 +57,7 @@ export default function Discover() {
     return matchesQuery && matchesSport && matchesCity
   })
 
+  if (error) return <ErrorState message={error} onRetry={load} />
   if (loading) return <SkeletonList count={5} />
 
   return (

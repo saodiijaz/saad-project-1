@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar'
 import { ActivityIndicator, View } from 'react-native'
 import { supabase, hasSupabaseConfig } from '../lib/supabase'
 import type { Session } from '@supabase/supabase-js'
+import { OfflineBanner } from '../components/OfflineBanner'
 
 export default function RootLayout() {
   const [session, setSession] = useState<Session | null>(null)
@@ -54,6 +55,7 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <StatusBar style="dark" />
+      <OfflineBanner />
       <Stack screenOptions={{ headerShown: false }} />
     </SafeAreaProvider>
   )
