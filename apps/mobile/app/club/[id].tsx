@@ -4,6 +4,7 @@ import { useLocalSearchParams, Stack, useRouter } from 'expo-router'
 import {
   getClubById, isFollowing, followClub, unfollowClub,
   getClubPosts, isClubAdmin, getClubFollowerCount,
+  getClubStats, ClubStats,
 } from '../../lib/data'
 import { Club, ClubPost } from '../../lib/types'
 import { hapticLight, hapticError } from '../../lib/haptics'
@@ -18,13 +19,17 @@ export default function ClubProfile() {
   const [posts, setPosts] = useState<ClubPost[]>([])
   const [admin, setAdmin] = useState(false)
   const [followerCount, setFollowerCount] = useState(0)
+  const [stats, setStats] = useState<ClubStats | null>(null)
 
   useEffect(() => {
     if (!id) return
     getClubById(id).then(setClub).finally(() => setLoading(false))
     isFollowing(id).then(setFollowing)
     getClubPosts(id).then(setPosts)
-    isClubAdmin(id).then(setAdmin)
+    isClubAdmin(id).then(isA => {
+      setAdmin(isA)
+      if (isA) getClubStats(id).then(setStats).catch(() => {})
+    })
     getClubFollowerCount(id).then(setFollowerCount)
   }, [id])
 
@@ -82,6 +87,27 @@ export default function ClubProfile() {
         <Pressable style={styles.shareBtn} onPress={shareClub}>
           <Text style={styles.shareBtnText}>📤 Dela</Text>
         </Pressable>
+
+        {admin && stats && (
+          <View style={styles.statsGrid}>
+            <View style={styles.statCard}>
+              <Text style={styles.statValue}>{stats.followers}</Text>
+              <Text style={styles.statLabel}>Följare</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={styles.statValue}>{stats.posts}</Text>
+              <Text style={styles.statLabel}>Inlägg</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={styles.statValue}>{stats.likes}</Text>
+              <Text style={styles.statLabel}>Likes</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={styles.statValue}>{stats.comments}</Text>
+              <Text style={styles.statLabel}>Kommentarer</Text>
+            </View>
+          </View>
+        )}
 
         {admin && (
           <Pressable style={styles.adminBtn} onPress={() => router.push(`/club/${id}/new-post`)}>
@@ -147,4 +173,8 @@ const styles = StyleSheet.create({
   postTitle: { fontSize: 16, fontWeight: '600', marginBottom: 4 },
   postDate: { fontSize: 13, color: '#0F6E56', marginBottom: 6 },
   postBody: { fontSize: 14, color: '#333', lineHeight: 20 },
+  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
+  statCard: { flexGrow: 1, flexBasis: '47%', padding: 12, borderRadius: 10, backgroundColor: '#F1EFE8', alignItems: 'center' },
+  statValue: { fontSize: 22, fontWeight: '700', color: '#0F6E56' },
+  statLabel: { fontSize: 12, color: '#666', marginTop: 2, textTransform: 'uppercase', letterSpacing: 0.4 },
 })

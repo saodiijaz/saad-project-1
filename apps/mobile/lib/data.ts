@@ -515,6 +515,49 @@ export async function getClubFollowers(clubId: string): Promise<FriendUser[]> {
   return (data ?? []).map((r: any) => r.user).filter(Boolean) as FriendUser[]
 }
 
+export type ClubStats = {
+  followers: number
+  posts: number
+  likes: number
+  comments: number
+}
+
+export async function getClubStats(clubId: string): Promise<ClubStats> {
+  if (!supabase) return { followers: 0, posts: 0, likes: 0, comments: 0 }
+
+  const [followersRes, postsRes] = await Promise.all([
+    supabase.from('follows').select('*', { count: 'exact', head: true }).eq('club_id', clubId),
+    supabase.from('club_posts').select('id').eq('club_id', clubId),
+  ])
+
+  // any: Supabase select returns minimal { id: string } rows
+  const postIds = ((postsRes.data ?? []) as any[]).map(p => p.id)
+  const postCount = postIds.length
+
+  if (postCount === 0) {
+    return {
+      followers: followersRes.count ?? 0,
+      posts: 0, likes: 0, comments: 0,
+    }
+  }
+
+  const [likesRes, commentsRes] = await Promise.all([
+    supabase.from('post_likes')
+      .select('*', { count: 'exact', head: true })
+      .eq('post_type', 'club').in('post_id', postIds),
+    supabase.from('post_comments')
+      .select('*', { count: 'exact', head: true })
+      .eq('post_type', 'club').in('post_id', postIds),
+  ])
+
+  return {
+    followers: followersRes.count ?? 0,
+    posts: postCount,
+    likes: likesRes.count ?? 0,
+    comments: commentsRes.count ?? 0,
+  }
+}
+
 export async function getClubFollowerCount(clubId: string): Promise<number> {
   if (!supabase) return 0
   const { count } = await supabase
