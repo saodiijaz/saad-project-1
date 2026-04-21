@@ -261,6 +261,35 @@ export async function getMyAdminClubs(): Promise<Array<{id: string; name: string
   return (data ?? []).map((r: any) => r.clubs)
 }
 
+// ---------- User profile ----------
+
+export type UserProfile = {
+  id: string
+  email: string
+  display_name: string | null
+  avatar_url: string | null
+  city: string | null
+}
+
+export async function getMyProfile(): Promise<UserProfile | null> {
+  if (!supabase) return null
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) return null
+  const { data, error } = await supabase
+    .from('users').select('*').eq('id', session.user.id).maybeSingle()
+  if (error) throw error
+  return data as UserProfile
+}
+
+export async function updateMyProfile(p: { display_name?: string; city?: string }): Promise<void> {
+  if (!supabase) return
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) return
+  const { error } = await supabase
+    .from('users').update(p).eq('id', session.user.id)
+  if (error) throw error
+}
+
 export async function getFeed(): Promise<FeedPost[]> {
   if (!hasSupabaseConfig || !supabase) return []
   const { data: { session } } = await supabase.auth.getSession()
