@@ -63,3 +63,67 @@ export async function getClubById(id: string): Promise<Club | null> {
     sports: ((data as any).club_sports ?? []).map((cs: any) => cs.sports?.slug).filter(Boolean),
   }
 }
+
+// ---------- Follows ----------
+
+export async function isFollowing(clubId: string): Promise<boolean> {
+  if (!hasSupabaseConfig || !supabase) return false
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) return false
+
+  const { data } = await supabase
+    .from('follows')
+    .select('club_id')
+    .eq('user_id', session.user.id)
+    .eq('club_id', clubId)
+    .maybeSingle()
+
+  return !!data
+}
+
+export async function followClub(clubId: string): Promise<void> {
+  if (!supabase) throw new Error('Not connected')
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) throw new Error('Not logged in')
+
+  const { error } = await supabase
+    .from('follows')
+    .insert({ user_id: session.user.id, club_id: clubId })
+
+  if (error && error.code !== '23505') throw error
+}
+
+export async function unfollowClub(clubId: string): Promise<void> {
+  if (!supabase) return
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) return
+
+  await supabase
+    .from('follows')
+    .delete()
+    .eq('user_id', session.user.id)
+    .eq('club_id', clubId)
+}
+
+export async function getFollowedClubs(): Promise<Club[]> {
+  if (!hasSupabaseConfig || !supabase) return []
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) return []
+
+  const { data, error } = await supabase
+    .from('follows')
+    .select(`
+      clubs (
+        id, name, slug, description, logo_url, cover_url,
+        city, website, contact_email, created_at,
+        club_sports ( sports ( slug ) )
+      )
+    `)
+    .eq('user_id', session.user.id)
+
+  if (error) throw error
+  return (data ?? []).map((row: any) => ({
+    ...row.clubs,
+    sports: (row.clubs.club_sports ?? []).map((cs: any) => cs.sports?.slug).filter(Boolean),
+  }))
+}

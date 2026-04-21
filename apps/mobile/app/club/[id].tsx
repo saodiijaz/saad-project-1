@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, Alert } from 'react-native'
 import { useLocalSearchParams, Stack } from 'expo-router'
-import { getClubById } from '../../lib/data'
+import { getClubById, isFollowing, followClub, unfollowClub } from '../../lib/data'
 import { Club } from '../../lib/types'
 
 export default function ClubProfile() {
@@ -9,11 +9,31 @@ export default function ClubProfile() {
   const [club, setClub] = useState<Club | null>(null)
   const [loading, setLoading] = useState(true)
   const [following, setFollowing] = useState(false)
+  const [followBusy, setFollowBusy] = useState(false)
 
   useEffect(() => {
     if (!id) return
     getClubById(id).then(setClub).finally(() => setLoading(false))
+    isFollowing(id).then(setFollowing)
   }, [id])
+
+  async function toggleFollow() {
+    if (!id || followBusy) return
+    setFollowBusy(true)
+    try {
+      if (following) {
+        await unfollowClub(id)
+        setFollowing(false)
+      } else {
+        await followClub(id)
+        setFollowing(true)
+      }
+    } catch (e: any) {
+      Alert.alert('Fel', e?.message ?? 'Kunde inte uppdatera följ-status')
+    } finally {
+      setFollowBusy(false)
+    }
+  }
 
   if (loading) return <ActivityIndicator style={{ marginTop: 40 }} />
   if (!club) return <Text style={{ padding: 20 }}>Förening hittades inte</Text>
@@ -29,10 +49,11 @@ export default function ClubProfile() {
         <Text style={styles.description}>{club.description}</Text>
         <Pressable
           style={[styles.followBtn, following && styles.followingBtn]}
-          onPress={() => setFollowing(!following)}
+          onPress={toggleFollow}
+          disabled={followBusy}
         >
           <Text style={[styles.followText, following && styles.followingText]}>
-            {following ? 'Följer ✓' : 'Följ förening'}
+            {followBusy ? '…' : following ? 'Följer ✓' : 'Följ förening'}
           </Text>
         </Pressable>
         {club.website && <Text style={styles.link}>🌐 {club.website}</Text>}
