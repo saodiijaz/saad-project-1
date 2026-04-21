@@ -35,6 +35,16 @@ Last update: 2026-04-22 (runda 2 — polish/UX-briefs körda)
 - [x] BRIEF-IN-002 — DONE — Deep linking share button (sportmeet://club/[id])
 - [ ] BRIEF-IN-003 — SKIPPED (NEEDS-INPUT — Expo push account / 🔵 framtid)
 
+### BRIEF-QUEUE Prio 1 (tredje rundan — 2026-04-22, promoted from Prio 2)
+- [x] BRIEF-UI-023 — DONE — Föreningsstatistik-panel för admin (följare / inlägg / likes / kommentarer).
+- [x] BRIEF-UI-024 — DONE — Sortering i Discover (Populärast / Nyast / A–Ö); klubbar visar nu följarantal.
+- [x] BRIEF-UI-025 — DONE — "Nära mig"-sortering via GPS + haversine. Lägger till `expo-location` dep.
+- [x] BRIEF-UI-026 — DONE — 6 badges på profilen baserat på aktivitet (vänner/likes/kommentarer/follows/admin).
+- [x] BRIEF-UI-027 — DONE — Privat event-toggle + `event_invites`-tabell (migration 014). Uppdaterad RLS så creator + inbjudna kan läsa privata events.
+- [x] BRIEF-UI-028 — DONE — Bjud in vänner till privat event från event/[id].
+- [x] BRIEF-IN-009 — DONE — Rapportera inlägg från kommentarsskärm (`post_reports`-tabell, migration 013).
+- [x] BRIEF-IN-010 — DONE — Analytics scaffolding (`lib/analytics.ts`, console-backend i dev, no-op i prod). Redo för PostHog-inkoppling.
+
 ### BRIEF-QUEUE Prio 1 (andra rundan — 2026-04-22)
 - [x] BRIEF-UI-016 — DONE (stub list) — Map screen + `getClubsForMap` helper. MapLibre EJ lagt till i package.json (risk för native build-fel utan prebuild). Fallback-listvyn visar alla klubbar med koordinater.
 - [x] BRIEF-UI-017 — DONE — `EmptyState` component, applied in events/feed/friends.
@@ -49,17 +59,19 @@ Inte körda — stubs utan fulla brief-filer.
 
 ## Manuella steg imorgon
 
-1. **Kör SQL-migrationer i Supabase SQL Editor** (i ordning — samma som tidigare):
-   - `supabase/migrations/006_events_schema.sql` ... `012_cities.sql`
+1. **Kör SQL-migrationer i Supabase SQL Editor** (i ordning):
+   - `supabase/migrations/006_events_schema.sql` ... `012_cities.sql` (från tidigare rundor)
+   - `supabase/migrations/013_post_reports.sql` (NY — moderation)
+   - `supabase/migrations/014_private_events.sql` (NY — privata events)
 2. **Skapa Storage buckets** (från tidigare briefs):
    - `avatars` · `user-posts` · `club-assets`
 3. **Kör RLS-policy SQL** för avatars/club-assets (se BRIEF-UI-009 / BRIEF-UI-013).
-4. **Installera nya deps från runda 2:**
+4. **Installera nya deps från runda 2 + 3:**
    ```bash
    cd apps/mobile
-   npx expo install @react-native-community/netinfo expo-haptics
+   npx expo install @react-native-community/netinfo expo-haptics expo-location
    ```
-   VIKTIGT: `OfflineBanner` (i `_layout.tsx`) och `lib/haptics.ts` importerar direkt från dessa paket. Utan installation kraschar appen vid start.
+   VIKTIGT: `OfflineBanner` (i `_layout.tsx`), `lib/haptics.ts` och `lib/geo.ts` importerar direkt från dessa paket. Utan installation kraschar appen vid start.
 5. **BRIEF-UI-016 — MapLibre (valfritt):** Nuvarande `app/map.tsx` är en lista-fallback. Om du vill ha riktig karta:
    - Kör `npx expo install @maplibre/maplibre-react-native`
    - Prebuild krävs: `npx expo prebuild` → öppnar Android/iOS-projekt
