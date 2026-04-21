@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, Alert
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router'
 import {
   getClubById, isFollowing, followClub, unfollowClub,
-  getClubPosts, isClubAdmin,
+  getClubPosts, isClubAdmin, getClubFollowerCount,
 } from '../../lib/data'
 import { Club, ClubPost } from '../../lib/types'
 
@@ -16,6 +16,7 @@ export default function ClubProfile() {
   const [followBusy, setFollowBusy] = useState(false)
   const [posts, setPosts] = useState<ClubPost[]>([])
   const [admin, setAdmin] = useState(false)
+  const [followerCount, setFollowerCount] = useState(0)
 
   useEffect(() => {
     if (!id) return
@@ -23,6 +24,7 @@ export default function ClubProfile() {
     isFollowing(id).then(setFollowing)
     getClubPosts(id).then(setPosts)
     isClubAdmin(id).then(setAdmin)
+    getClubFollowerCount(id).then(setFollowerCount)
   }, [id])
 
   async function toggleFollow() {
@@ -69,6 +71,12 @@ export default function ClubProfile() {
         {admin && (
           <Pressable style={styles.adminBtn} onPress={() => router.push(`/club/${id}/edit`)}>
             <Text style={styles.adminBtnText}>✎ Redigera förening</Text>
+          </Pressable>
+        )}
+
+        {admin && (
+          <Pressable style={styles.adminBtn} onPress={() => router.push(`/club/${id}/followers`)}>
+            <Text style={styles.adminBtnText}>👥 {followerCount} följare</Text>
           </Pressable>
         )}
 

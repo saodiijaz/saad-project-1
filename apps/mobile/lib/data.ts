@@ -426,6 +426,24 @@ export async function respondToFriendRequest(friendshipId: string, accept: boole
   if (error) throw error
 }
 
+export async function getClubFollowers(clubId: string): Promise<FriendUser[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase
+    .from('follows')
+    .select('user:user_id(id, display_name, email, avatar_url, city)')
+    .eq('club_id', clubId)
+  if (error) throw error
+  // any: Supabase nested select returns dynamic shape
+  return (data ?? []).map((r: any) => r.user).filter(Boolean) as FriendUser[]
+}
+
+export async function getClubFollowerCount(clubId: string): Promise<number> {
+  if (!supabase) return 0
+  const { count } = await supabase
+    .from('follows').select('*', { count: 'exact', head: true }).eq('club_id', clubId)
+  return count ?? 0
+}
+
 export async function removeFriend(friendUserId: string): Promise<void> {
   if (!supabase) return
   const { data: { session } } = await supabase.auth.getSession()
