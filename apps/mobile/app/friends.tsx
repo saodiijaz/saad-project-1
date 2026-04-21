@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { View, Text, TextInput, StyleSheet, FlatList, Pressable, Alert, Image } from 'react-native'
+import { View, Text, TextInput, StyleSheet, FlatList, Pressable, Alert, Image, RefreshControl } from 'react-native'
 import { Stack } from 'expo-router'
 import {
   searchUsers, sendFriendRequest, getFriends, getPendingRequests,
@@ -17,10 +17,17 @@ export default function FriendsScreen() {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<FriendUser[]>([])
 
+  const [refreshing, setRefreshing] = useState(false)
+
   const loadAll = useCallback(async () => {
     const [f, r] = await Promise.all([getFriends(), getPendingRequests()])
     setFriends(f); setRequests(r)
   }, [])
+
+  async function onRefresh() {
+    setRefreshing(true)
+    try { await loadAll() } finally { setRefreshing(false) }
+  }
 
   useEffect(() => { loadAll() }, [loadAll])
 
@@ -80,6 +87,7 @@ export default function FriendsScreen() {
           data={friends}
           keyExtractor={u => u.id}
           contentContainerStyle={{ padding: 16 }}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#0F6E56']} tintColor="#0F6E56" />}
           ListEmptyComponent={
             <EmptyState
               emoji="🤝"
@@ -107,6 +115,7 @@ export default function FriendsScreen() {
           data={requests}
           keyExtractor={r => r.id}
           contentContainerStyle={{ padding: 16 }}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#0F6E56']} tintColor="#0F6E56" />}
           ListEmptyComponent={
             <EmptyState
               emoji="✉️"

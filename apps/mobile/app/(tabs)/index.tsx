@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import {
-  View, Text, FlatList, StyleSheet, Pressable, TextInput, ScrollView,
+  View, Text, FlatList, StyleSheet, Pressable, TextInput, ScrollView, RefreshControl,
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { getClubs, getCities, City } from '../../lib/data'
@@ -37,6 +37,7 @@ export default function Discover() {
   const [sport, setSport] = useState<string>('all')
   const [cityName, setCityName] = useState<string>('all') // 'all' or city name
   const [error, setError] = useState<string | null>(null)
+  const [refreshing, setRefreshing] = useState(false)
 
   function load() {
     setError(null)
@@ -45,6 +46,16 @@ export default function Discover() {
       .then(([cl, ci]) => { setClubs(cl); setCities(ci) })
       .catch(err => setError(err?.message ?? 'Kunde inte ladda föreningar'))
       .finally(() => setLoading(false))
+  }
+
+  async function onRefresh() {
+    setRefreshing(true)
+    try {
+      const [cl, ci] = await Promise.all([getClubs(), getCities()])
+      setClubs(cl); setCities(ci)
+    } finally {
+      setRefreshing(false)
+    }
   }
 
   useEffect(() => { load() }, [])
@@ -123,6 +134,9 @@ export default function Discover() {
         contentContainerStyle={{ padding: 16 }}
         ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
         ListEmptyComponent={<Text style={styles.empty}>Inga föreningar matchade filtret</Text>}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#0F6E56']} tintColor="#0F6E56" />
+        }
       />
     </View>
   )

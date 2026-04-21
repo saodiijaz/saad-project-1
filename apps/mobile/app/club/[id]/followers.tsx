@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { View, Text, StyleSheet, FlatList, Image, ActivityIndicator } from 'react-native'
+import { View, Text, StyleSheet, FlatList, Image, ActivityIndicator, RefreshControl } from 'react-native'
 import { useLocalSearchParams, Stack } from 'expo-router'
 import { getClubFollowers, FriendUser } from '../../../lib/data'
 
@@ -7,11 +7,19 @@ export default function ClubFollowers() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const [followers, setFollowers] = useState<FriendUser[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
 
   useEffect(() => {
     if (!id) return
     getClubFollowers(id).then(setFollowers).finally(() => setLoading(false))
   }, [id])
+
+  async function onRefresh() {
+    if (!id) return
+    setRefreshing(true)
+    try { setFollowers(await getClubFollowers(id)) }
+    finally { setRefreshing(false) }
+  }
 
   if (loading) return <ActivityIndicator style={{ marginTop: 40 }} />
 
@@ -22,6 +30,7 @@ export default function ClubFollowers() {
         data={followers}
         keyExtractor={u => u.id}
         contentContainerStyle={{ padding: 16 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#0F6E56']} tintColor="#0F6E56" />}
         ListEmptyComponent={<Text style={styles.empty}>Inga följare än</Text>}
         renderItem={({ item }) => (
           <View style={styles.row}>
