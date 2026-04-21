@@ -79,12 +79,17 @@ export default function Discover() {
           <Text style={styles.bannerText}>Demo-läge: visar mock-data</Text>
         </View>
       )}
-      <TextInput
-        placeholder="Sök förening eller sport…"
-        value={query}
-        onChangeText={setQuery}
-        style={styles.search}
-      />
+      <View style={styles.searchRow}>
+        <TextInput
+          placeholder="Sök förening eller sport…"
+          value={query}
+          onChangeText={setQuery}
+          style={styles.search}
+        />
+        <Pressable style={styles.mapBtn} onPress={() => router.push('/map')}>
+          <Text style={styles.mapBtnText}>🗺️</Text>
+        </Pressable>
+      </View>
 
       <Text style={styles.filterLabel}>Stad</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
@@ -146,7 +151,10 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   banner: { backgroundColor: '#FAEEDA', padding: 8 },
   bannerText: { textAlign: 'center', color: '#854F0B', fontSize: 12 },
-  search: { margin: 16, marginBottom: 8, padding: 12, borderWidth: 1, borderColor: '#ddd', borderRadius: 8, fontSize: 16 },
+  searchRow: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginTop: 16, marginBottom: 8, gap: 8 },
+  search: { flex: 1, padding: 12, borderWidth: 1, borderColor: '#ddd', borderRadius: 8, fontSize: 16 },
+  mapBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#F1EFE8', justifyContent: 'center', alignItems: 'center' },
+  mapBtnText: { fontSize: 20 },
   filterLabel: { fontSize: 12, color: '#888', textTransform: 'uppercase', marginLeft: 16, marginTop: 8, marginBottom: 4, letterSpacing: 0.5 },
   chipRow: { paddingHorizontal: 16, paddingBottom: 4, gap: 8 },
   chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: '#F1EFE8', marginRight: 8 },

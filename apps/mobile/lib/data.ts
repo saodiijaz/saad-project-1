@@ -361,6 +361,41 @@ export async function getCities(): Promise<City[]> {
   return (data ?? []) as City[]
 }
 
+// ---------- Map ----------
+
+export type MapClub = {
+  id: string
+  name: string
+  city: string
+  latitude: number
+  longitude: number
+  sports: string[]
+}
+
+export async function getClubsForMap(): Promise<MapClub[]> {
+  if (!hasSupabaseConfig || !supabase) return []
+  const { data, error } = await supabase
+    .from('clubs')
+    .select(`
+      id, name, city,
+      cities ( latitude, longitude ),
+      club_sports ( sports ( slug ) )
+    `)
+  if (error) throw error
+  // any: Supabase nested-select response shape is not expressible in our
+  // TS types — we map it manually below.
+  return (data ?? [])
+    .filter((c: any) => c.cities)
+    .map((c: any) => ({
+      id: c.id,
+      name: c.name,
+      city: c.city,
+      latitude: c.cities.latitude,
+      longitude: c.cities.longitude,
+      sports: (c.club_sports ?? []).map((cs: any) => cs.sports?.slug).filter(Boolean),
+    }))
+}
+
 // ---------- Friends ----------
 
 export type FriendUser = {
