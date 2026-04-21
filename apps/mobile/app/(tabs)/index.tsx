@@ -1,17 +1,37 @@
 import { useEffect, useState } from 'react'
 import {
-  View, Text, FlatList, StyleSheet, Pressable, ActivityIndicator, TextInput,
+  View, Text, FlatList, StyleSheet, Pressable, ActivityIndicator, TextInput, ScrollView,
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { getClubs } from '../../lib/data'
 import { Club } from '../../lib/types'
 import { hasSupabaseConfig } from '../../lib/supabase'
 
+const SPORT_COLORS: Record<string, { bg: string; fg: string }> = {
+  hockey: { bg: '#E8F0FE', fg: '#1A73E8' },
+  football: { bg: '#E6F4EA', fg: '#137333' },
+  golf: { bg: '#FEF7E0', fg: '#B06000' },
+  basketball: { bg: '#FCE8E6', fg: '#D93025' },
+  triathlon: { bg: '#F3E8FD', fg: '#8430CE' },
+}
+
+const DEFAULT_BADGE = { bg: '#EEE', fg: '#444' }
+
+const QUICK_FILTERS: Array<{ key: string; label: string }> = [
+  { key: 'all', label: 'Alla' },
+  { key: 'hockey', label: 'Hockey' },
+  { key: 'football', label: 'Fotboll' },
+  { key: 'golf', label: 'Golf' },
+  { key: 'basketball', label: 'Basket' },
+  { key: 'triathlon', label: 'Triathlon' },
+]
+
 export default function Discover() {
   const router = useRouter()
   const [clubs, setClubs] = useState<Club[]>([])
   const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState('')
+  const [filter, setFilter] = useState<string>('all')
 
   useEffect(() => {
     getClubs()
@@ -20,10 +40,13 @@ export default function Discover() {
       .finally(() => setLoading(false))
   }, [])
 
-  const filtered = clubs.filter(c =>
-    c.name.toLowerCase().includes(query.toLowerCase()) ||
-    c.sports.some(s => s.toLowerCase().includes(query.toLowerCase()))
-  )
+  const filtered = clubs.filter(c => {
+    const matchesQuery =
+      c.name.toLowerCase().includes(query.toLowerCase()) ||
+      c.sports.some(s => s.toLowerCase().includes(query.toLowerCase()))
+    const matchesFilter = filter === 'all' || c.sports.includes(filter)
+    return matchesQuery && matchesFilter
+  })
 
   if (loading) return <ActivityIndicator style={{ marginTop: 40 }} />
 
@@ -40,6 +63,23 @@ export default function Discover() {
         onChangeText={setQuery}
         style={styles.search}
       />
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.chipRow}
+      >
+        {QUICK_FILTERS.map(f => (
+          <Pressable
+            key={f.key}
+            style={[styles.chip, filter === f.key && styles.chipActive]}
+            onPress={() => setFilter(f.key)}
+          >
+            <Text style={[styles.chipText, filter === f.key && styles.chipTextActive]}>
+              {f.label}
+            </Text>
+          </Pressable>
+        ))}
+      </ScrollView>
       <FlatList
         data={filtered}
         keyExtractor={item => item.id}
@@ -49,7 +89,17 @@ export default function Discover() {
             onPress={() => router.push(`/club/${item.id}`)}
           >
             <Text style={styles.name}>{item.name}</Text>
-            <Text style={styles.city}>{item.city} · {item.sports.join(', ')}</Text>
+            <Text style={styles.city}>{item.city}</Text>
+            <View style={styles.badgeRow}>
+              {item.sports.map(s => {
+                const c = SPORT_COLORS[s] ?? DEFAULT_BADGE
+                return (
+                  <View key={s} style={[styles.badge, { backgroundColor: c.bg }]}>
+                    <Text style={[styles.badgeText, { color: c.fg }]}>{s}</Text>
+                  </View>
+                )
+              })}
+            </View>
             <Text style={styles.desc} numberOfLines={2}>{item.description}</Text>
           </Pressable>
         )}
@@ -65,14 +115,25 @@ const styles = StyleSheet.create({
   banner: { backgroundColor: '#FAEEDA', padding: 8 },
   bannerText: { textAlign: 'center', color: '#854F0B', fontSize: 12 },
   search: {
-    margin: 16, marginBottom: 0, padding: 12,
+    margin: 16, marginBottom: 8, padding: 12,
     borderWidth: 1, borderColor: '#ddd', borderRadius: 8, fontSize: 16,
   },
+  chipRow: { paddingHorizontal: 16, paddingBottom: 8, gap: 8 },
+  chip: {
+    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
+    backgroundColor: '#F1EFE8', marginRight: 8,
+  },
+  chipActive: { backgroundColor: '#0F6E56' },
+  chipText: { fontSize: 14, color: '#444' },
+  chipTextActive: { color: '#fff', fontWeight: '500' },
   card: {
     padding: 16, borderWidth: 1, borderColor: '#eee', borderRadius: 12,
     backgroundColor: '#fafafa',
   },
   name: { fontSize: 18, fontWeight: '600', marginBottom: 4 },
   city: { fontSize: 13, color: '#666', marginBottom: 8 },
+  badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 },
+  badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12, marginRight: 6 },
+  badgeText: { fontSize: 11, fontWeight: '500', textTransform: 'capitalize' },
   desc: { fontSize: 14, color: '#333', lineHeight: 20 },
 })
