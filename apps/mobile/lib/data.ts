@@ -160,3 +160,27 @@ export async function createClubPost(p: {
   })
   if (error) throw error
 }
+
+// ---------- Feed ----------
+
+export type FeedPost = ClubPost & { club: { id: string; name: string; slug: string } }
+
+export async function getFeed(): Promise<FeedPost[]> {
+  if (!hasSupabaseConfig || !supabase) return []
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) return []
+
+  const { data: followData } = await supabase
+    .from('follows').select('club_id').eq('user_id', session.user.id)
+  const clubIds = (followData ?? []).map((f: any) => f.club_id)
+  if (clubIds.length === 0) return []
+
+  const { data, error } = await supabase
+    .from('club_posts')
+    .select('*, clubs(id, name, slug)')
+    .in('club_id', clubIds)
+    .order('created_at', { ascending: false })
+    .limit(50)
+  if (error) throw error
+  return (data ?? []).map((p: any) => ({ ...p, club: p.clubs })) as FeedPost[]
+}
