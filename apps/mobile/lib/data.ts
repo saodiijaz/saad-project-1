@@ -165,6 +165,72 @@ export async function createClubPost(p: {
 
 export type FeedPost = ClubPost & { club: { id: string; name: string; slug: string } }
 
+// ---------- Events ----------
+
+export type Event = {
+  id: string
+  club_id: string | null
+  created_by: string
+  title: string
+  description: string
+  location: string | null
+  starts_at: string
+  ends_at: string | null
+  max_attendees: number | null
+  is_public: boolean
+  created_at: string
+  club?: { id: string; name: string; slug: string }
+}
+
+export async function getUpcomingEvents(): Promise<Event[]> {
+  if (!hasSupabaseConfig || !supabase) return []
+  const { data, error } = await supabase
+    .from('events')
+    .select('*, clubs(id, name, slug)')
+    .eq('is_public', true)
+    .gte('starts_at', new Date().toISOString())
+    .order('starts_at', { ascending: true })
+    .limit(50)
+  if (error) throw error
+  return (data ?? []).map((e: any) => ({ ...e, club: e.clubs })) as Event[]
+}
+
+export async function getEventById(id: string): Promise<Event | null> {
+  if (!supabase) return null
+  const { data, error } = await supabase
+    .from('events').select('*, clubs(id, name, slug)').eq('id', id).maybeSingle()
+  if (error) throw error
+  return data ? { ...data, club: (data as any).clubs } as Event : null
+}
+
+export async function isAttendingEvent(eventId: string): Promise<boolean> {
+  if (!supabase) return false
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) return false
+  const { data } = await supabase
+    .from('event_attendees').select('status')
+    .eq('event_id', eventId).eq('user_id', session.user.id).maybeSingle()
+  return !!data && data.status === 'going'
+}
+
+export async function joinEvent(eventId: string): Promise<void> {
+  if (!supabase) throw new Error('Not connected')
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) throw new Error('Not logged in')
+  const { error } = await supabase
+    .from('event_attendees')
+    .upsert({ event_id: eventId, user_id: session.user.id, status: 'going' })
+  if (error) throw error
+}
+
+export async function leaveEvent(eventId: string): Promise<void> {
+  if (!supabase) return
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) return
+  await supabase.from('event_attendees').delete()
+    .eq('event_id', eventId).eq('user_id', session.user.id)
+}
+
 export async function getFeed(): Promise<FeedPost[]> {
   if (!hasSupabaseConfig || !supabase) return []
   const { data: { session } } = await supabase.auth.getSession()
