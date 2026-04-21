@@ -65,6 +65,9 @@ export default function Profile() {
       <Pressable style={styles.editBtn} onPress={() => router.push('/edit-profile')}>
         <Text style={styles.editBtnText}>Redigera profil</Text>
       </Pressable>
+      <Pressable style={styles.friendsBtn} onPress={() => router.push('/friends')}>
+        <Text style={styles.friendsBtnText}>Mina vänner</Text>
+      </Pressable>
       <Pressable style={styles.button} onPress={() => signOut()}>
         <Text style={styles.buttonText}>Logga ut</Text>
       </Pressable>
@@ -88,6 +91,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32, marginBottom: 12,
   },
   editBtnText: { color: '#fff', fontSize: 16, fontWeight: '500' },
+  friendsBtn: {
+    backgroundColor: '#fff', borderWidth: 1, borderColor: '#0F6E56',
+    padding: 14, borderRadius: 8, paddingHorizontal: 32, marginBottom: 12,
+  },
+  friendsBtnText: { color: '#0F6E56', fontSize: 16, fontWeight: '500' },
   button: {
     backgroundColor: '#fff', borderWidth: 1, borderColor: '#E24B4A',
     padding: 14, borderRadius: 8, paddingHorizontal: 32,

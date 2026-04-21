@@ -315,6 +315,101 @@ export async function uploadAvatar(uri: string): Promise<string> {
   return publicUrl
 }
 
+// ---------- Friends ----------
+
+export type FriendUser = {
+  id: string
+  display_name: string | null
+  email: string
+  avatar_url: string | null
+  city: string | null
+}
+
+export type FriendRequest = {
+  id: string
+  from: FriendUser
+  created_at: string
+}
+
+export async function searchUsers(query: string): Promise<FriendUser[]> {
+  if (!supabase || query.trim().length < 2) return []
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) return []
+  const { data, error } = await supabase
+    .from('users')
+    .select('id, display_name, email, avatar_url, city')
+    .or(`display_name.ilike.%${query}%,email.ilike.%${query}%`)
+    .neq('id', session.user.id)
+    .limit(20)
+  if (error) throw error
+  return (data ?? []) as FriendUser[]
+}
+
+export async function sendFriendRequest(addresseeId: string): Promise<void> {
+  if (!supabase) throw new Error('Not connected')
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) throw new Error('Not logged in')
+  const { error } = await supabase.from('friendships').insert({
+    requester_id: session.user.id,
+    addressee_id: addresseeId,
+    status: 'pending',
+  })
+  if (error && error.code !== '23505') throw error // ignore duplicate
+}
+
+export async function getFriends(): Promise<FriendUser[]> {
+  if (!supabase) return []
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) return []
+  const uid = session.user.id
+
+  const { data, error } = await supabase
+    .from('friendships')
+    .select('requester_id, addressee_id, requester:requester_id(id, display_name, email, avatar_url, city), addressee:addressee_id(id, display_name, email, avatar_url, city)')
+    .eq('status', 'accepted')
+    .or(`requester_id.eq.${uid},addressee_id.eq.${uid}`)
+  if (error) throw error
+
+  // any: Supabase select with nested joins returns a dynamic shape
+  return (data ?? []).map((f: any) => (f.requester_id === uid ? f.addressee : f.requester))
+}
+
+export async function getPendingRequests(): Promise<FriendRequest[]> {
+  if (!supabase) return []
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) return []
+
+  const { data, error } = await supabase
+    .from('friendships')
+    .select('id, created_at, requester:requester_id(id, display_name, email, avatar_url, city)')
+    .eq('status', 'pending')
+    .eq('addressee_id', session.user.id)
+    .order('created_at', { ascending: false })
+  if (error) throw error
+
+  // any: Supabase select with nested joins returns a dynamic shape
+  return (data ?? []).map((r: any) => ({ id: r.id, from: r.requester, created_at: r.created_at }))
+}
+
+export async function respondToFriendRequest(friendshipId: string, accept: boolean): Promise<void> {
+  if (!supabase) return
+  const { error } = await supabase
+    .from('friendships')
+    .update({ status: accept ? 'accepted' : 'declined' })
+    .eq('id', friendshipId)
+  if (error) throw error
+}
+
+export async function removeFriend(friendUserId: string): Promise<void> {
+  if (!supabase) return
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) return
+  await supabase
+    .from('friendships')
+    .delete()
+    .or(`and(requester_id.eq.${session.user.id},addressee_id.eq.${friendUserId}),and(requester_id.eq.${friendUserId},addressee_id.eq.${session.user.id})`)
+}
+
 export async function getFeed(): Promise<FeedPost[]> {
   if (!hasSupabaseConfig || !supabase) return []
   const { data: { session } } = await supabase.auth.getSession()
