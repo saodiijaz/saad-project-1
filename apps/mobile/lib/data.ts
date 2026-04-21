@@ -324,6 +324,42 @@ export async function createEvent(p: {
   return data.id
 }
 
+export async function isEventCreator(eventId: string): Promise<boolean> {
+  if (!supabase) return false
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) return false
+  const { data } = await supabase
+    .from('events').select('created_by').eq('id', eventId).maybeSingle()
+  return !!data && (data as any).created_by === session.user.id
+}
+
+export async function inviteFriend(eventId: string, friendUserId: string): Promise<void> {
+  if (!supabase) throw new Error('Not connected')
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) throw new Error('Not logged in')
+  const { error } = await supabase.from('event_invites').insert({
+    event_id: eventId,
+    invitee_id: friendUserId,
+    invited_by: session.user.id,
+  })
+  if (error && error.code !== '23505') throw error
+}
+
+export async function uninviteFriend(eventId: string, friendUserId: string): Promise<void> {
+  if (!supabase) return
+  await supabase.from('event_invites').delete()
+    .eq('event_id', eventId).eq('invitee_id', friendUserId)
+}
+
+export async function getEventInvitees(eventId: string): Promise<string[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase
+    .from('event_invites').select('invitee_id').eq('event_id', eventId)
+  if (error) return []
+  // any: minimal select returns { invitee_id: string }[]
+  return (data ?? []).map((r: any) => r.invitee_id)
+}
+
 export async function getMyAdminClubs(): Promise<Array<{id: string; name: string}>> {
   if (!supabase) return []
   const { data: { session } } = await supabase.auth.getSession()
