@@ -1,0 +1,50 @@
+import { Club } from './types'
+
+export const mockClubs: Club[] = [
+  {
+    id: 'mock-1',
+    name: 'Linköpings HC',
+    slug: 'linkopings-hc',
+    description: 'Hockeyklubb i SHL. Matcher på Saab Arena. Välkommen till en av Sveriges mest engagerade hockeyfamiljer.',
+    logo_url: null, cover_url: null, city: 'Linköping',
+    website: 'https://lhf.se', contact_email: 'info@lhf.se',
+    sports: ['hockey'], created_at: '2024-01-01T00:00:00Z',
+  },
+  {
+    id: 'mock-2',
+    name: 'Landeryds Golfklubb',
+    slug: 'landeryds-gk',
+    description: 'En av Östergötlands största golfklubbar med två 18-hålsbanor strax utanför Linköping. Öppet för alla åldrar och nivåer.',
+    logo_url: null, cover_url: null, city: 'Linköping',
+    website: 'https://landerydsgk.se', contact_email: 'kansli@landerydsgk.se',
+    sports: ['golf'], created_at: '2024-01-01T00:00:00Z',
+  },
+  {
+    id: 'mock-3',
+    name: 'IFK Linköping',
+    slug: 'ifk-linkoping',
+    description: 'Fotbollsklubb med herr- och damlag från ungdom till senior. Hemmaplan Linköping Arena.',
+    logo_url: null, cover_url: null, city: 'Linköping',
+    website: 'https://ifklinkoping.se', contact_email: null,
+    sports: ['fotboll'], created_at: '2024-01-01T00:00:00Z',
+  },
+  {
+    id: 'mock-4',
+    name: 'BK Derby',
+    slug: 'bk-derby',
+    description: 'Basketklubb för alla åldrar. Träningar på Stångebro sporthall. Nybörjare välkomna.',
+    logo_url: null, cover_url: null, city: 'Linköping',
+    website: null, contact_email: 'info@bkderby.se',
+    sports: ['basket'], created_at: '2024-01-01T00:00:00Z',
+  },
+  {
+    id: 'mock-5',
+    name: 'Linköping Triathlon Club',
+    slug: 'linkoping-tri',
+    description: 'Triathlonklubb med gemensamma träningar i simning, cykling och löpning. Från nybörjare till Ironman-nivå.',
+    logo_url: null, cover_url: null, city: 'Linköping',
+    website: null, contact_email: 'kontakt@linkopingtri.se',
+    sports: ['triathlon', 'löpning', 'simning', 'cykling'],
+    created_at: '2024-01-01T00:00:00Z',
+  },
+]

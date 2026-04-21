@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "sportmeet",
+    "slug": "sportmeet",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "scheme": "sportmeet",
+    "ios": {
+      "supportsTablet": true
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": ["expo-router"]
+  }
+}
