@@ -2,10 +2,11 @@
 
 Branch: claude/nightly-run-2
 Started: 2026-04-21 23:50 (Cowork)
-Last update: 2026-04-22 (runda 2 — polish/UX-briefs körda)
+Last update: 2026-04-22 01:10 (runda 4 — verifiering, ingen ny brief att köra)
 
 ## Schemalagd loop
-- Scheduled task: `nightly-run-2-briefs` → **avstängd efter denna körning** (alla Prio 1 + nya polish-briefs klara)
+- Scheduled task: `nightly-run-2-briefs` → **avstängd efter denna körning** (alla körbara briefs klara, inga TODOs i `BRIEF-QUEUE.md`)
+- Runda 4: bekräftade att inga TODO-briefs återstår (all Prio 1 = DONE, Prio 2 = stubs/uppskjutna). Återställde en oavsiktlig redigering i `apps/mobile/tsconfig.json` (raderade `.expo/types/**/*.ts` + `expo-env.d.ts` includes — restored till HEAD).
 
 ## Briefs gjorda
 
@@ -109,6 +110,11 @@ För varje brief i runda 2 har jag läst igenom filerna jag skrev och bekräftat
 
 ## Nästa steg för Zivar
 
-- Installera nya deps (netinfo, haptics) och kör migrationerna (om ej redan gjorda)
+- Installera nya deps (netinfo, haptics, location, image-picker) och kör migrationerna (006–014) om ej redan gjorda
 - Bestäm om MapLibre/Google Maps ska aktiveras (prebuild + real-map-komponent)
-- Om Prio 2-briefs ska köras: skriv fulla brief-filer i `docs/briefs/`
+- Om Prio 2-briefs ska köras: skriv fulla brief-filer i `docs/briefs/` och re-aktivera scheduled task `nightly-run-2-briefs`
+- Push: `git push origin claude/nightly-run-2` → öppna PR mot main
+
+## Slutstatus (runda 4)
+
+Inga TODO-briefs i `docs/briefs/BRIEF-QUEUE.md`. Alla 30 körbara briefs är DONE. BRIEF-IN-003 markerad SKIPPED (push, kräver Expo-konto). Prio 2 (UI-029, IN-004..008, IN-011..013, m.fl.) är medvetet uppskjutna utan fulla brief-filer. Branch är redo för manuell push av Zivar.
